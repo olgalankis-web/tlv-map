@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מפת המלצות | תל אביב</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #E07B5A;
+      --text:     #1a1a1a;
+      --muted:    #888;
+      --border:   #ebebeb;
+      --bg:       #f7f7f7;
+      --surface:  #ffffff;
+      --radius:   13px;
+      --shadow:   0 4px 24px rgba(0,0,0,.10);
+      --shadow-lg:0 8px 40px rgba(0,0,0,.14);
+    }
+
+    body {
+      font-family: 'Assistant', sans-serif;
+      height: 100dvh;
+      overflow: hidden;
+      position: relative;
+      background: #e8e8e8;
+    }
+
+    /* ─── Map — fills everything ─── */
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ─── Top bar overlay ─── */
+    .topbar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      left: 14px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .topbar > * { pointer-events: auto; }
+
+    .topbar-logo-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border-radius: 50px;
+      padding: 9px 16px;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    .logo-text span { color: var(--accent); }
+    .search-input {
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: transparent;
+      width: 160px;
+      direction: rtl;
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      flex-wrap: nowrap;
+    }
+
+    .filter-pill {
+      background: var(--surface);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all .18s;
+      white-space: nowrap;
+      direction: rtl;
+    }
+    .filter-pill:hover { box-shadow: 0 6px 24px rgba(0,0,0,.14); }
+    .filter-pill.has-active {
+      background: #434343;
+      color: #fff;
+    }
+    .filter-pill .arrow {
+      font-size: 10px;
+      opacity: .6;
+    }
+
+    .locate-pill {
+      background: var(--surface);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 14px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: box-shadow .18s;
+      flex-shrink: 0;
+    }
+    .locate-pill:hover { box-shadow: 0 6px 24px rgba(0,0,0,.14); }
+
+    /* ─── Collection button ─── */
+    .collection-pill {
+      background: var(--surface);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Assistant', sans-serif;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: box-shadow .18s, background .18s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+    }
+    .collection-pill:hover { box-shadow: 0 6px 24px rgba(0,0,0,.14); }
+    .collection-pill.active { background: #434343; color: #fff; }
+    .collection-badge {
+      background: #434343;
+      color: #fff;
+      border-radius: 50px;
+      font-size: 11px;
+      padding: 0 6px;
+      min-width: 18px;
+      text-align: center;
+      line-height: 18px;
+    }
+    .collection-pill.active .collection-badge { background: rgba(255,255,255,0.3); }
+
+
+    /* ─── Popup save button ─── */
+    .popup-save-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 2px 4px;
+      line-height: 1;
+      flex-shrink: 0;
+      opacity: 0.3;
+      transition: opacity .2s, transform .15s;
+    }
+    .popup-save-btn.saved { opacity: 1; }
+    .popup-save-btn:hover { transform: scale(1.2); opacity: 1; }
+
+    /* ─── Dropdown panels ─── */
+    .dropdown {
+      position: absolute;
+      top: 62px;
+      z-index: 1002;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 16px 18px 18px;
+      min-width: 280px;
+      max-width: 380px;
+      display: none;
+      direction: rtl;
+    }
+    .dropdown.open { display: block; }
+    .dropdown-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin-bottom: 11px;
+    }
+    .chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .chip {
+      padding: 6px 13px;
+      border-radius: 50px;
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text);
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { color: #fff !important; border-color: transparent !important; }
+
+    /* ─── Paste modal ─── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 2000;
+    }
+    .modal-backdrop.open { display: block; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2001;
+      background: var(--surface);
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,0,0,.22);
+      width: 480px;
+      max-width: calc(100vw - 32px);
+      direction: rtl;
+      font-family: 'Assistant', sans-serif;
+    }
+    .modal.open { display: block; }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header strong { font-size: 16px; }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--muted);
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--bg); }
+
+    .modal-body { padding: 18px 20px; }
+    .modal-instructions {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+    .modal-instructions strong { color: var(--text); }
+    .modal-textarea {
+      width: 100%;
+      height: 130px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      direction: rtl;
+      resize: none;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .modal-textarea:focus { border-color: var(--accent); }
+
+    .modal-footer {
+      padding: 14px 20px 18px;
+      display: flex;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+    .modal-btn {
+      padding: 10px 22px;
+      border-radius: 50px;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .modal-btn-primary { background: var(--accent); color: #fff; }
+    .modal-btn-primary:hover { background: #c96a48; }
+    .modal-btn-secondary { background: var(--bg); color: var(--text); }
+    .modal-btn-secondary:hover { background: var(--border); }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      position: absolute;
+      top: 70px;
+      right: 14px;
+      bottom: 14px;
+      width: 310px;
+      background: var(--surface);
+      border-radius: 18px;
+      box-shadow: var(--shadow-lg);
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+    }
+    .sidebar.closed {
+      transform: translateX(340px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .hamburger-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .hamburger-btn:hover { background: var(--bg); }
+    .count-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fffcf2;
+      background: #cccccc;
+      border-radius: 50px;
+      padding: 3px 11px;
+    }
+
+    /* Floating open button — shows when sidebar is closed */
+    .sidebar-open-btn {
+      position: absolute;
+      top: 70px;
+      right: 14px;
+      z-index: 901;
+      background: var(--surface);
+      border: none;
+      border-radius: 12px;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: box-shadow .18s;
+      color: var(--text);
+    }
+    .sidebar-open-btn:hover { box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+    .sidebar.closed ~ .sidebar-open-btn { display: flex; }
+
+    /* Places list */
+    .places-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 6px;
+    }
+    .places-list::-webkit-scrollbar { width: 3px; }
+    .places-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .place-card {
+      padding: 6px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background .15s;
+      margin-bottom: 1px;
+    }
+    .place-card:hover { background: var(--bg); }
+    .place-card.active { background: #fdf0eb; }
+
+    .place-card-name {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 1px;
+    }
+    .place-card-area {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .place-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 3px;
+    }
+    .cat-tag {
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 50px;
+      font-weight: 500;
+    }
+
+    /* ─── Category groups in sidebar ─── */
+    .cat-group { margin-bottom: 4px; }
+
+    .cat-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 7px;
+      margin: 0 2px 1px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: default;
+      user-select: none;
+    }
+    .cat-group-header .cat-count {
+      margin-right: auto;
+      background: rgba(255,255,255,0.28);
+      border-radius: 50px;
+      padding: 0 8px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ─── Custom map markers ─── */
+    .map-marker {
+      border: 2.5px solid #fff;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 8px rgba(0,0,0,.22);
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-marker.active-m {
+      width: 36px;
+      height: 36px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.30);
+    }
+    .map-marker .m-emoji {
+      transform: rotate(45deg);
+      font-size: 13px;
+      line-height: 1;
+    }
+    .map-marker.active-m .m-emoji { font-size: 15px; }
+
+    /* ─── Popup ─── */
+    .leaflet-popup-content-wrapper {
+      border-radius: var(--radius) !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: none !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    .leaflet-popup-content { margin: 0 !important; min-width: 220px; }
+    .leaflet-popup-tip-container { display: none; }
+    .leaflet-popup-close-button {
+      top: 10px !important; left: 10px !important; right: auto !important;
+      color: var(--muted) !important; font-size: 18px !important;
+    }
+    .leaflet-popup-content { margin: 0 !important; }
+    .leaflet-popup-content-wrapper { padding: 0 !important; border-radius: 14px !important; }
+    .popup-inner { padding: 16px 18px; direction: rtl; font-family: 'Assistant', sans-serif; text-align: right; min-width: 230px; }
+    .popup-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; color: var(--dark); text-align: right; }
+    .popup-area { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-align: right; }
+    .popup-address {
+      display: flex; align-items: center; gap: 5px; justify-content: flex-start;
+      margin-bottom: 10px; direction: rtl; width: 100%;
+    }
+    .popup-address a {
+      color: var(--dark); text-decoration: underline; font-size: 12px;
+      text-underline-offset: 2px; text-decoration-color: var(--muted);
+    }
+    .popup-address a:hover { text-decoration-color: var(--dark); }
+    .popup-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; justify-content: flex-start; direction: rtl; width: 100%; }
+    .popup-footer { display: flex; align-items: center; justify-content: flex-start; gap: 10px; direction: rtl; width: 100%; }
+    .popup-notes { font-size: 12px; color: var(--muted); flex: 1; text-align: right; }
+    .popup-ig-icon {
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+      background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .2s;
+    }
+    .popup-ig-icon:hover { opacity: .82; }
+
+    /* ─── Instagram modal ─── */
+    #igModal {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.55); align-items: center; justify-content: center;
+    }
+    #igModal.open { display: flex; }
+    #igModalBox {
+      background: #fff; border-radius: 16px; overflow: hidden;
+      width: min(420px, 92vw); max-height: 88vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0,0,0,.25);
+    }
+    #igModalHeader {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid #eee;
+      font-family: 'Assistant', sans-serif; direction: rtl;
+    }
+    #igModalTitle { font-size: 14px; font-weight: 600; color: var(--dark); }
+    #igModalClose {
+      width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f0f0;
+      cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center;
+      color: #555;
+    }
+    #igModalClose:hover { background: #e0e0e0; }
+    #igModalBody {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 36px 24px; gap: 14px; text-align: center;
+      font-family: 'Assistant', sans-serif;
+    }
+    #igModalHandle {
+      font-size: 15px; color: #555; direction: ltr;
+    }
+    #igOpenBtn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 24px; border-radius: 12px; border: none; cursor: pointer;
+      background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      color: #fff; font-size: 15px; font-weight: 600; font-family: 'Assistant', sans-serif;
+      text-decoration: none; transition: opacity .2s; margin-top: 6px;
+    }
+    #igOpenBtn:hover { opacity: .87; }
+
+    /* ─── Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 11px 22px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-family: 'Assistant', sans-serif;
+      z-index: 9999;
+      transition: transform .3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── Expandable search bar ─── */
+    .search-bar {
+      display: none;
+      width: 210px;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border-radius: 50px;
+      box-shadow: var(--shadow);
+      padding: 0 14px;
+      height: 40px;
+    }
+    .search-bar.open { display: flex; }
+    .search-bar input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-family: 'Assistant', sans-serif;
+      font-size: 14px;
+      direction: rtl;
+      background: transparent;
+      min-width: 0;
+    }
+    .search-bar-clear {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 4px;
+      flex-shrink: 0;
+    }
+    .search-bar-clear:hover { color: var(--text); }
+
+    /* ─── Dropdown clear button ─── */
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 11px;
+    }
+    .dropdown-clear {
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Assistant', sans-serif;
+      padding: 2px 8px;
+      border-radius: 6px;
+      transition: color .15s;
+    }
+    .dropdown-clear:hover { color: var(--accent); }
+
+    /* ─── Overlay backdrop for dropdowns ─── */
+    .dropdown-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1001;
+    }
+    .dropdown-backdrop.open { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Map -->
+<div id="map"></div>
+
+<!-- Dropdown backdrop -->
+<div class="dropdown-backdrop" id="backdrop" onclick="closeAllDropdowns()"></div>
+
+<!-- Top bar -->
+<div class="topbar">
+
+  <!-- Logo -->
+  <div class="topbar-logo-pill">
+    <div class="logo-text">אוסף: <span>תל אביב</span></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-pills" id="filterPills">
+    <button class="filter-pill" id="btnCat" onclick="toggleDropdown('catPanel','btnCat')">
+      קטגוריה <span class="arrow">▾</span>
+    </button>
+    <button class="filter-pill" id="btnArea" onclick="toggleDropdown('areaPanel','btnArea')">
+      אזור <span class="arrow">▾</span>
+    </button>
+    <button class="filter-pill" id="btnShabbat" onclick="toggleShabbat()" style="display:none">
+      ✡️ פתוח בשבת
+    </button>
+    <button class="filter-pill" id="btnMore" onclick="toggleDropdown('morePanel','btnMore')">
+      <span style="font-size:16px;letter-spacing:2px">···</span>
+    </button>
+    <button class="filter-pill" id="btnSearch" onclick="toggleSearch()" title="חיפוש">🔍</button>
+    <div class="search-bar" id="searchBar">
+      <input id="searchInput" placeholder="חיפוש..." />
+      <button class="search-bar-clear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <!-- Collection -->
+  <button class="collection-pill" id="btnCollection" onclick="toggleCollection()">
+    🔖 האוסף שלי <span class="collection-badge" id="collectionBadge" style="display:none">0</span>
+  </button>
+
+
+</div>
+
+<!-- Category dropdown -->
+<div class="dropdown" id="catPanel" style="right:14px">
+  <div class="dropdown-header">
+    <span class="dropdown-title">קטגוריה</span>
+    <button class="dropdown-clear" onclick="clearCats()">נקה הכל</button>
+  </div>
+  <div class="chips-wrap" id="catChips"></div>
+</div>
+
+<!-- Area dropdown -->
+<div class="dropdown" id="areaPanel" style="right:14px">
+  <div class="dropdown-header">
+    <span class="dropdown-title">אזור</span>
+    <button class="dropdown-clear" onclick="clearAreas()">נקה הכל</button>
+  </div>
+  <div class="chips-wrap" id="areaChips"></div>
+</div>
+
+<!-- More panel -->
+<div class="dropdown" id="morePanel" style="right:14px">
+  <div class="dropdown-title">אפשרויות נוספות</div>
+  <button id="moreShabbatBtn" onclick="toggleShabbat()" style="margin-top:6px;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;cursor:pointer;direction:rtl;transition:border-color .2s;text-align:right" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <span style="font-size:18px">✡️</span>
+    <div>
+      <div style="font-weight:500">פתוח בשבת</div>
+      <div style="font-size:11px;color:var(--muted)">הצג מקומות פתוחים בשבת</div>
+    </div>
+  </button>
+  <button onclick="closeAllDropdowns();openPasteModal()" style="margin-top:6px;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;cursor:pointer;direction:rtl;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <span style="font-size:18px">📋</span>
+    <div style="text-align:right">
+      <div style="font-weight:500">עדכון נתונים מהשיט</div>
+      <div style="font-size:11px;color:var(--muted)">העתק-הדבק מ-Google Sheets</div>
+    </div>
+  </button>
+</div>
+
+<!-- Paste modal -->
+<div class="modal-backdrop" id="pasteBackdrop" onclick="closePasteModal()"></div>
+<div class="modal" id="pasteModal">
+  <div class="modal-header">
+    <strong>עדכון נתונים מ-Google Sheets</strong>
+    <button class="modal-close" onclick="closePasteModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-instructions">
+      <strong>שלב 1:</strong> פתחי את ה-<a href="https://docs.google.com/spreadsheets/d/1iJ_0Szj1BK3dXcSuPZCTZ-8fC8dqZz9xdK1Zf-MJVOM" target="_blank" style="color:var(--accent)">Google Sheet</a><br>
+      <strong>שלב 2:</strong> בחרי הכל <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px">Cmd+A</kbd><br>
+      <strong>שלב 3:</strong> העתיקי <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px">Cmd+C</kbd><br>
+      <strong>שלב 4:</strong> הדביקי כאן 👇
+    </div>
+    <textarea class="modal-textarea" id="pasteArea" placeholder="הדביקי כאן את הנתונים מהשיט…"></textarea>
+  </div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn-primary" onclick="parsePastedData()">עדכן מפה ✅</button>
+    <button class="modal-btn modal-btn-secondary" onclick="closePasteModal()">ביטול</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <button class="hamburger-btn" onclick="toggleSidebar()" title="סגור">
+      <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="0" y1="1" x2="18" y2="1"/>
+        <line x1="0" y1="7" x2="18" y2="7"/>
+        <line x1="0" y1="13" x2="18" y2="13"/>
+      </svg>
+    </button>
+    <span class="count-badge" id="countBadge">0 מקומות</span>
+  </div>
+
+  <!-- Collection header — shown only in collection mode -->
+  <div id="collectionHeader" style="display:none; align-items:center; justify-content:space-between; padding:10px 16px 6px; border-bottom:1px solid var(--border); flex-shrink:0; direction:rtl;">
+    <span style="font-size:14px; font-weight:700; color:var(--dark);">🔖 האוסף שלי</span>
+    <button onclick="buildRoute()" style="background:#434343;color:#fff;border:none;border-radius:50px;padding:6px 14px;font-family:'Assistant',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#434343'">
+      צור מסלול הליכה
+    </button>
+  </div>
+
+  <div class="places-list" id="placesList"></div>
+</aside>
+
+<!-- Open sidebar button (visible when closed) -->
+<button class="sidebar-open-btn" onclick="toggleSidebar()" title="רשימת מקומות">
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="0" y1="1" x2="18" y2="1"/>
+    <line x1="0" y1="7" x2="18" y2="7"/>
+    <line x1="0" y1="13" x2="18" y2="13"/>
+  </svg>
+</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+
+<!-- Instagram Modal -->
+<div id="igModal">
+  <div id="igModalBox">
+    <div id="igModalHeader">
+      <div id="igModalTitle">אינסטגרם</div>
+      <button id="igModalClose" onclick="closeIgModal()">✕</button>
+    </div>
+    <div id="igModalBody">
+      <svg width="52" height="52" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#f09433"/>
+            <stop offset="25%" style="stop-color:#e6683c"/>
+            <stop offset="50%" style="stop-color:#dc2743"/>
+            <stop offset="75%" style="stop-color:#cc2366"/>
+            <stop offset="100%" style="stop-color:#bc1888"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#igGrad)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+      <div id="igModalHandle"></div>
+      <a id="igOpenBtn" href="#" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+        פתח באינסטגרם
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+        onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'">
+</script>
+
+<script>
+if (typeof L === "undefined") {
+  document.getElementById("map").innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Heebo,sans-serif;direction:rtl;flex-direction:column;gap:12px;color:#888">' +
+    '<span style="font-size:32px">🗺️</span>' +
+    '<strong style="color:#1a1a1a">נדרש חיבור אינטרנט לטעינת המפה</strong>' +
+    '<span>רענני את הדף לאחר שהאינטרנט זמין</span></div>';
+}
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CATEGORY STYLES  — emoji + color per category
+   ═══════════════════════════════════════════════════ */
+const CAT_STYLE = {
+  "קפה":                  { emoji: "☕",   color: "#ec994d" },
+  "משהו מתוק":            { emoji: "🍨",   color: "#f2b6a3" },
+  "אוכל קזואלי ליום":    { emoji: "🥪",   color: "#f4d788" },
+  "אוכל קזואלי לערב":    { emoji: "🍝",   color: "#94bdbb" },
+  "ערב יותר דרסד-אפ":    { emoji: "👠",   color: "#20607f" },
+  "ערב כיפי":             { emoji: "🎟️",  color: "#94bdbb" },
+  "לשבת לעבוד":           { emoji: "💻",   color: "#e0665a" },
+  "אוכל טוב לקנות לקחת": { emoji: "🛒",   color: "#e79c74" },
+  "מקום יפה לשבת בו":    { emoji: "🌄",   color: "#657651" },
+  "מקום לשוטט בו":        { emoji: "🚶‍♀️", color: "#c0af5a" },
+  "דברים יפים לקנות":     { emoji: "🛍️",  color: "#d3cce3" },
+  "מרכז מסחרי":           { emoji: "🏢",   color: "#a39ab8" },
+  "תוכן ותרבות":          { emoji: "🎟️",  color: "#94bdbb" },
+};
+
+function catStyle(cat) {
+  if (!cat) return { emoji: "📍", color: "#888" };
+  if (CAT_STYLE[cat]) return CAT_STYLE[cat];
+  const norm = s => s.replace(/[׳''']/g, "");
+  const normCat = norm(cat);
+  for (const [key, val] of Object.entries(CAT_STYLE)) {
+    if (norm(key) === normCat) return val;
+  }
+  return { emoji: "📍", color: "#888" };
+}
+
+/* ═══════════════════════════════════════════════════
+   GOOGLE SHEETS
+   ═══════════════════════════════════════════════════ */
+const SHEET_ID = "1iJ_0Szj1BK3dXcSuPZCTZ-8fC8dqZz9xdK1Zf-MJVOM";
+const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:onSheetData`;
+
+/* ═══════════════════════════════════════════════════
+   FALLBACK COORDINATES
+   ═══════════════════════════════════════════════════ */
+const FALLBACK_COORDS = {
+  "שפרה":["32.0498","34.7534"],"ביאטריס":["32.0870","34.7764"],"Epicerie Fine":["32.0564","34.7645"],
+  "איטס שנקין":["32.0700","34.7752"],"איטס בית חנה בן גוריון":["32.0786","34.7746"],"עדינה":["32.0510","34.7538"],
+  "פרנצ׳י":["32.0910","34.7820"],"אסיף":["32.0638","34.7718"],"שמיר":["32.0560","34.7710"],
+  "הרצל 16":["32.0592","34.7706"],"בטשון":["32.0722","34.7896"],"האחים":["32.0788","34.7826"],
+  "כפרא מיו":["32.0783","34.7822"],"הויטרינה":["32.0650","34.7730"],"הגפן":["32.0670","34.7740"],
+  "תדר":["32.0578","34.7619"],"פיצה לילה":["32.0596","34.7692"],"סאקה-בה":["32.0597","34.7693"],
+  "איזקייה":["32.0600","34.7700"],"עסיס":["32.0555","34.7715"],"טומה טומטו":["32.0660","34.7740"],
+  "לאבה":["32.0640","34.7720"],"טקריה":["32.0620","34.7730"],"בוסר":["32.0660","34.7710"],
+  "ליבר":["32.0680","34.7750"],"בריק":["32.0545","34.7700"],"ספורט סעיד":["32.0500","34.7540"],
+  "ביינה":["32.0676","34.7734"],"COTE":["32.0660","34.7720"],"פלורה":["32.0690","34.7760"],
+  "אתאטרס":["32.0700","34.7750"],"מעין פז":["32.0500","34.7530"],"AMARIANO ON":["32.0680","34.7750"],
+  "אביבה זילברמן":["32.0700","34.7750"],"בוטיק 5":["32.0710","34.7740"],"שתיים":["32.0690","34.7760"],
+  "VAS":["32.0700","34.7750"],"אנג׳לי":["32.0700","34.7755"],"שופרא":["32.0700","34.7748"],
+  "אסופה":["32.0658","34.7750"],"סטודיו NOW":["32.0700","34.7740"],"שופו":["32.0700","34.7745"],
+  "יוקה מונסטר":["32.0700","34.7750"],"סדליקטסן":["32.0660","34.7720"],"סופי":["32.0680","34.7745"],
+  "יולטה":["32.0700","34.7760"],"WE LOVE PLANTS":["32.0710","34.7755"],"iOTA":["32.0680","34.7740"],
+  "טויסים":["32.0780","34.7740"],"PULP":["32.0680","34.7720"],"המגדלור":["32.0700","34.7700"],
+  "טוי שופה":["32.0780","34.7742"],"צלמניה":["32.0710","34.7750"],"סיפור פשוט":["32.0700","34.7740"],
+  "מרכז הבאו האו":["32.0500","34.7535"],"ספארק המסילה":["32.0530","34.7694"],"גן הפסגה":["32.0525","34.7498"],
+  "גן קרית ספר":["32.0652","34.7735"],"פארק הירקון":["32.1007","34.7985"],"פארק מדרון יפו":["32.0520","34.7525"],
+  "פארק החורשות":["32.0488","34.7679"],"סוזן דלאל":["32.0558","34.7629"],"צ'רלס קלור":["32.0607","34.7612"],
+  "גג חניון גרוזנברג":["32.0636","34.7713"],"גינת דובנוב":["32.0813","34.7791"],"שוק הפשפשים":["32.0497","34.7533"],
+  "שוק גבעון":["32.0596","34.7690"],"שוק הנמל":["32.1005","34.7715"],"גן החשמל":["32.0637","34.7738"],
+  "שוק לוינסקי":["32.0597","34.7692"],"שנקין":["32.0699","34.7750"],"קינג ג'ורג'":["32.0780","34.7762"],
+  "דיזינגוף":["32.0798","34.7741"],"נווה צדק":["32.0578","34.7622"],"באזל":["32.0921","34.7820"],
+  "גן העיר":["32.0690","34.7820"],"קניון עזריאלי":["32.0741","34.7924"],"קניון דיזינגוף":["32.0790","34.7741"],
+  "קניון TLV":["32.0750","34.7910"],"אלון שבו":["32.0699","34.7748"],"שטפן":["32.0680","34.7740"],
+  "סניורה":["32.0498","34.7536"],"קסטה":["32.0680","34.7750"],"לה מולאן":["32.0700","34.7760"],
+  "אלכסנדר":["32.0867","34.7637"],"מורן גיל":["32.0700","34.7750"],"תרצהמן":["32.0700","34.7745"],
+  "טן טן":["32.0627","34.7752"],"הוטל מונטיפיורי":["32.0658","34.7736"],"דוקא":["32.0502","34.7536"],
+  "ייבי":["32.0680","34.7730"],"אוזרייה":["32.0497","34.7534"],"פועה":["32.0497","34.7533"],
+  "בית רומנו":["32.0578","34.7621"],"קוצ'ינה הס 4":["32.0675","34.7739"],"צ'יקטי":["32.0630","34.7720"],
+  "הקטן":["32.0500","34.7540"],"סנטי":["32.0828","34.7737"],"קולנוע יפו":["32.0536","34.7535"],
+  "בית חנה הרבי":["32.0786","34.7746"],"ANAN":["32.0700","34.7750"],"תמתי":["32.0700","34.7745"],
+  "WAYCUP":["32.0700","34.7750"],"בית אריאל":["32.0680","34.7712"],"הקפה לב":["32.0700","34.7750"],
+  "עמיתה במוזיאון העיר":["32.0638","34.7698"],"גרציאני גן קרית ספר":["32.0652","34.7737"],
+  "בוקה":["32.0928","34.7816"],"קפליקס סניף שלמה המלך":["32.0810","34.7790"],"קפליקס נגה":["32.0670","34.7720"],
+  "קפליקס מרחביה":["32.0810","34.7800"],"תמוז":["32.0555","34.7715"],'מאז"ה 9':["32.0676","34.7739"],
+  "משק עפאים":["32.0700","34.7750"],"שנטל":["32.0700","34.7755"],"קפה ברזיל":["32.0700","34.7750"],
+  "קפה בר":["32.0700","34.7740"],"קפה יעל":["32.0700","34.7745"],"דאמה":["32.0497","34.7533"],
+  "נחת במתחם התחנה":["32.0590","34.7610"],"מיראז'":["32.0680","34.7730"],"עילא":["32.0680","34.7740"],
+  "HOC":["32.0727","34.7740"],"Nomena":["32.0679","34.7730"],"התחתית":["32.0680","34.7720"],
+  "קפה שילה":["32.0700","34.7750"],"בית רדיקל":["32.0650","34.7734"],"בית ליבלינג":["32.0700","34.7755"],
+  "מוזיאון העיר":["32.0638","34.7698"],"מוזיאון תל אביב":["32.0811","34.7813"],'מוז"א':["32.0811","34.7813"],
+  "צלטנר הוצאת ספרים":["32.0700","34.7750"],"פיקה":["32.0680","34.7740"],"לוקי רוסו":["32.0690","34.7750"],
+  "רסק":["32.0700","34.7745"],"פה תשקם":["32.0700","34.7750"],"קזינו סאן רמו":["32.0572","34.7595"],
+  "קנטינה סאן רמו":["32.0572","34.7598"],"הרשל'ה":["32.0700","34.7750"],"בוב":["32.0700","34.7745"],
+  "סטודיו אנזו":["32.0700","34.7750"],"בל אנד סוב":["32.0700","34.7755"],"שביל הפרחים":["32.0650","34.7718"],
+  "נחמני קפה":["32.0658","34.7758"],"תופין":["32.0700","34.7750"],"אפי ברגן יעקב":["32.0700","34.7745"],
+  "קוטה":["32.0700","34.7750"]
+};
+
+let PLACES = [];
+
+/* ═══════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════ */
+let activeAreas   = new Set();
+let activeCats    = new Set();
+let shabbatFilter = false;
+let collectionMode = false;
+
+// Saved places — persisted in localStorage
+let savedNames = (() => {
+  try { return new Set(JSON.parse(localStorage.getItem('tlv_saved') || '[]')); }
+  catch(e) { return new Set(); }
+})();
+
+function persistSaved() {
+  try { localStorage.setItem('tlv_saved', JSON.stringify([...savedNames])); } catch(e) {}
+}
+
+function toggleSavePlace(name, btn) {
+  if (savedNames.has(name)) {
+    savedNames.delete(name);
+    if (btn) { btn.classList.remove('saved'); btn.title = 'שמור לאוסף'; }
+  } else {
+    savedNames.add(name);
+    if (btn) { btn.classList.add('saved'); btn.title = 'הסר מהאוסף'; }
+  }
+  persistSaved();
+  updateCollectionBtn();
+  if (collectionMode) applyFilters();
+}
+
+function updateCollectionBtn() {
+  const count = savedNames.size;
+  const badge = document.getElementById("collectionBadge");
+  const btn   = document.getElementById("btnCollection");
+  const header = document.getElementById("collectionHeader");
+  badge.textContent = count;
+  badge.style.display = count > 0 ? "inline-block" : "none";
+  btn.classList.toggle("active", collectionMode);
+  header.style.display = collectionMode ? "flex" : "none";
+}
+
+function toggleCollection() {
+  collectionMode = !collectionMode;
+  updateCollectionBtn();
+  applyFilters();
+}
+
+function buildRoute() {
+  const saved = PLACES.filter(p => savedNames.has(p.name) && p.lat && p.lng);
+  if (saved.length < 2) { showToast("צריך לפחות 2 מקומות שמורים"); return; }
+
+  // Nearest-neighbor greedy route
+  const visited = new Array(saved.length).fill(false);
+  const route = [saved[0]];
+  visited[0] = true;
+  while (route.length < saved.length) {
+    const last = route[route.length - 1];
+    let nearest = -1, minDist = Infinity;
+    saved.forEach((p, i) => {
+      if (visited[i]) return;
+      const d = Math.hypot(p.lat - last.lat, p.lng - last.lng);
+      if (d < minDist) { minDist = d; nearest = i; }
+    });
+    route.push(saved[nearest]);
+    visited[nearest] = true;
+  }
+
+  const origin = `${route[0].lat},${route[0].lng}`;
+  const dest   = `${route[route.length - 1].lat},${route[route.length - 1].lng}`;
+  const wps    = route.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|');
+  const url    = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}${wps ? '&waypoints=' + wps : ''}&travelmode=walking`;
+  window.open(url, '_blank');
+}
+let searchText  = "";
+let activeId    = null;
+let markers     = {};
+
+/* ═══════════════════════════════════════════════════
+   MAP INIT
+   ═══════════════════════════════════════════════════ */
+if (typeof L === "undefined") { throw new Error("Leaflet לא נטען"); }
+
+const map = L.map("map", { zoomControl: false }).setView([32.0800, 34.7793], 13);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+  maxZoom: 19,
+}).addTo(map);
+L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+/* ═══════════════════════════════════════════════════
+   MARKER FACTORY
+   ═══════════════════════════════════════════════════ */
+function getIcon(place, isActive = false) {
+  const size  = isActive ? 42 : 32;
+  const cats  = place.cats.length ? place.cats.slice(0, 3) : [""];
+  const gap   = 4;
+  const totalW = cats.length * size + (cats.length - 1) * gap;
+
+  const circles = cats.map(c => {
+    const color = catStyle(c).color;
+    const border = isActive ? `border:1px solid #434343` : `border:1px solid #fff`;
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};${border};box-shadow:0 1px 4px rgba(0,0,0,.18);flex-shrink:0"></div>`;
+  }).join("");
+
+  return L.divIcon({
+    html: `<div style="display:flex;align-items:center;gap:${gap}px">${circles}</div>`,
+    className: "",
+    iconSize:    [totalW, size],
+    iconAnchor:  [totalW / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 10)],
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   INSTAGRAM MODAL
+   ═══════════════════════════════════════════════════ */
+let _currentIgUrl = "";
+function openIgModal(url, name) {
+  _currentIgUrl = url;
+  document.getElementById("igModalTitle").textContent = name || "אינסטגרם";
+  document.getElementById("igOpenBtn").href = url;
+  const handle = url.replace(/\/$/, "").split("/").pop();
+  document.getElementById("igModalHandle").textContent = handle ? "@" + handle : "";
+  document.getElementById("igModal").classList.add("open");
+}
+function openIgPopup(e) {
+  e.preventDefault();
+  const url = _currentIgUrl;
+  if (!url) return;
+  const w = 480, h = 700;
+  const left = Math.round(window.screen.width  / 2 - w / 2);
+  const top  = Math.round(window.screen.height / 2 - h / 2);
+  window.open(url, "instagram_popup", `width=${w},height=${h},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+}
+function closeIgModal() {
+  document.getElementById("igModal").classList.remove("open");
+}
+document.getElementById("igModal").addEventListener("click", function(e) {
+  if (e.target === this) closeIgModal();
+});
+
+/* ═══════════════════════════════════════════════════
+   POPUP
+   ═══════════════════════════════════════════════════ */
+function popupHTML(p) {
+  const tags = p.cats.map(c => {
+    const s = catStyle(c);
+    return `<span class="cat-tag" style="background:${s.color};color:#fff">${s.emoji} ${c}</span>`;
+  }).join("");
+
+  const addressHTML = p.displayAddress
+    ? `<div class="popup-address">
+        <a href="https://www.google.com/maps/search/${encodeURIComponent(p.displayAddress)}" target="_blank">
+          ${p.displayAddress}
+        </a>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+      </div>` : "";
+
+  const igIcon = p.instagram
+    ? `<a class="popup-ig-icon" href="${p.instagram}" target="_blank" rel="noopener">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+      </a>`
+    : "";
+
+  const notesHTML = p.notes
+    ? `<div class="popup-notes">${p.notes}</div>` : "";
+
+  const isSaved = savedNames.has(p.name);
+  const safeName = p.name.replace(/'/g, "\\'");
+  const saveBtn = `<button class="popup-save-btn${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? 'הסר מהאוסף' : 'שמור לאוסף'}">📌</button>`;
+
+  return `<div class="popup-inner">
+    <div class="popup-name">${p.name}</div>
+    <div class="popup-area">${p.area}</div>
+    ${addressHTML}
+    <div class="popup-tags">${tags}</div>
+    <div class="popup-footer">${igIcon}${notesHTML}${saveBtn}</div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER MARKERS
+   ═══════════════════════════════════════════════════ */
+function renderMarkers(filtered) {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  filtered.forEach((p, i) => {
+    const m = L.marker([p.lat, p.lng], { icon: getIcon(p, i === activeId) })
+      .addTo(map)
+      .bindPopup(popupHTML(p), { maxWidth: 280 });
+    m.on("click", () => selectPlace(i, filtered));
+    markers[i] = m;
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   SELECT PLACE
+   ═══════════════════════════════════════════════════ */
+function deselectPlace(filtered) {
+  activeId = null;
+  Object.entries(markers).forEach(([i, m]) => m.setIcon(getIcon(filtered[Number(i)], false)));
+  document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
+}
+
+function selectPlace(idx, filtered) {
+  if (activeId === idx) {
+    deselectPlace(filtered);
+    markers[idx].closePopup();
+    return;
+  }
+  activeId = idx;
+  const p = filtered[idx];
+  Object.entries(markers).forEach(([i, m]) => m.setIcon(getIcon(filtered[Number(i)], Number(i) === idx)));
+  markers[idx].openPopup();
+  map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
+  document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
+  const card = document.getElementById(`card-${idx}`);
+  if (card) { card.classList.add("active"); card.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER SIDEBAR LIST
+   ═══════════════════════════════════════════════════ */
+function renderList(filtered) {
+  const list = document.getElementById("placesList");
+  document.getElementById("countBadge").textContent = `${filtered.length} מקומות`;
+
+  if (!filtered.length) {
+    const backHint = collectionMode
+      ? `<div onclick="toggleCollection()" style="margin-top:12px;cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;text-underline-offset:2px">
+          חזרי אחורה ושמרי מקומות בכפתור ה-📌
+        </div>`
+      : "";
+    list.innerHTML = `<div style="padding:28px;text-align:center;color:var(--muted);font-size:14px;direction:rtl">לא נמצאו מקומות 🙁${backHint}</div>`;
+    return;
+  }
+
+  // Group by primary category (cats[0])
+  const groups = {};
+  filtered.forEach((p, i) => {
+    const cat = p.cats[0] || "אחר";
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push({ p, i });
+  });
+
+  // Sort categories by order in CAT_STYLE
+  const catOrder = Object.keys(CAT_STYLE);
+  const sortedCats = Object.keys(groups).sort((a, b) => {
+    const ai = catOrder.indexOf(a), bi = catOrder.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b, "he");
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  const showHeaders = activeCats.size === 0;
+
+  list.innerHTML = sortedCats.map(cat => {
+    const s = catStyle(cat);
+    const items = groups[cat].map(({ p, i }) => {
+      const visibleCats = activeCats.size > 0
+        ? p.cats.filter(c => !activeCats.has(c))
+        : p.cats.slice(1);
+      const extraTags = visibleCats.map(c => {
+        const cs = catStyle(c);
+        return `<span class="cat-tag" style="background:${cs.color};color:#fff">${cs.emoji} ${c}</span>`;
+      }).join("");
+      const safeName = p.name.replace(/'/g, "\\'");
+      const removeBtn = collectionMode
+        ? `<button onclick="event.stopPropagation();toggleSavePlace('${safeName}',null)" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .15s" onmouseover="this.style.color='#555'" onmouseout="this.style.color='#aaa'" title="הסר מהאוסף">✕</button>`
+        : "";
+      return `<div class="place-card" id="card-${i}" onclick="selectPlace(${i}, filteredPlaces)" style="display:flex;align-items:center;gap:4px">
+        <div style="flex:1;min-width:0">
+          <div class="place-card-name">${p.name}</div>
+          <div class="place-card-area">${p.area}</div>
+          ${extraTags ? `<div class="place-card-tags">${extraTags}</div>` : ""}
+        </div>
+        ${removeBtn}
+      </div>`;
+    }).join("");
+
+    const header = showHeaders ? `<div class="cat-group-header" style="background:${s.color}">
+        <span style="font-size:18px">${s.emoji}</span>
+        <span>${cat}</span>
+        <span class="cat-count">${groups[cat].length}</span>
+      </div>` : "";
+
+    return `<div class="cat-group">${header}${items}</div>`;
+  }).join("");
+}
+
+/* ═══════════════════════════════════════════════════
+   FILTER LOGIC
+   ═══════════════════════════════════════════════════ */
+let filteredPlaces = [];
+
+function applyFilters() {
+  filteredPlaces = PLACES.filter(p => {
+    const areaOk    = !activeAreas.size  || activeAreas.has(p.area);
+    const catOk     = !activeCats.size   || p.cats.some(c => activeCats.has(c));
+    const searchOk  = !searchText        || p.name.includes(searchText) || p.area.includes(searchText);
+    const shabbatVal    = (p.shabbat || "").trim().toLowerCase();
+    const shabbatOk     = !shabbatFilter || shabbatVal === "כן" || shabbatVal === "ערב" || shabbatVal === "yes";
+    const collectionOk  = !collectionMode || savedNames.has(p.name);
+    return areaOk && catOk && searchOk && shabbatOk && collectionOk;
+  });
+  activeId = null;
+  renderList(filteredPlaces);
+  renderMarkers(filteredPlaces);
+}
+
+/* ═══════════════════════════════════════════════════
+   BUILD FILTER CHIPS
+   ═══════════════════════════════════════════════════ */
+function buildFilters() {
+  const areas = [...new Set(PLACES.map(p => p.area))].sort();
+  const cats  = [...new Set(PLACES.flatMap(p => p.cats))].sort();
+
+  // Area chips
+  const areaWrap = document.getElementById("areaChips");
+  areaWrap.innerHTML = "";
+  areas.forEach(a => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (activeAreas.has(a) ? " active" : "");
+    chip.style.cssText = activeAreas.has(a) ? "background:#434343;border-color:#434343;color:#fff" : "";
+    chip.textContent = a;
+    chip.onclick = () => {
+      activeAreas.has(a) ? activeAreas.delete(a) : activeAreas.add(a);
+      buildFilters();
+      applyFilters();
+      updateFilterBtnState();
+      fitToActiveAreas();
+    };
+    areaWrap.appendChild(chip);
+  });
+
+  // Category chips
+  const catWrap = document.getElementById("catChips");
+  catWrap.innerHTML = "";
+  cats.forEach(c => {
+    const s = catStyle(c);
+    const isActive = activeCats.has(c);
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.style.cssText = `background:${s.color};color:#fff;border:1.5px solid ${isActive ? "#434343" : "transparent"}`;
+    chip.innerHTML = `${s.emoji} ${c}`;
+    chip.onclick = () => {
+      activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
+      buildFilters();
+      applyFilters();
+      updateFilterBtnState();
+    };
+    catWrap.appendChild(chip);
+  });
+}
+
+function updateFilterBtnState() {
+  document.getElementById("btnCat").classList.toggle("has-active", activeCats.size > 0);
+  document.getElementById("btnArea").classList.toggle("has-active", activeAreas.size > 0);
+}
+
+/* ═══════════════════════════════════════════════════
+   DROPDOWN TOGGLE
+   ═══════════════════════════════════════════════════ */
+function toggleDropdown(panelId, btnId) {
+  const panel     = document.getElementById(panelId);
+  const backdrop  = document.getElementById("backdrop");
+  const isOpen    = panel.classList.contains("open");
+
+  // close all first
+  document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("open"));
+
+  if (!isOpen) {
+    // position panel under its button
+    const btn  = document.getElementById(btnId);
+    const rect = btn.getBoundingClientRect();
+    panel.style.top   = (rect.bottom + 6) + "px";
+    panel.style.right = (window.innerWidth - rect.right) + "px";
+    panel.style.left  = "auto";
+    panel.classList.add("open");
+    backdrop.classList.add("open");
+  } else {
+    backdrop.classList.remove("open");
+  }
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("open"));
+  document.getElementById("backdrop").classList.remove("open");
+}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR TOGGLE
+   ═══════════════════════════════════════════════════ */
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("closed");
+}
+
+/* ═══════════════════════════════════════════════════
+   SEARCH
+   ═══════════════════════════════════════════════════ */
+function toggleSearch() {
+  const bar    = document.getElementById("searchBar");
+  const btn    = document.getElementById("btnSearch");
+  const isOpen = bar.classList.contains("open");
+  closeAllDropdowns();
+  if (isOpen) {
+    bar.classList.remove("open");
+    btn.classList.remove("has-active");
+    searchText = "";
+    document.getElementById("searchInput").value = "";
+    applyFilters();
+  } else {
+    bar.classList.add("open");
+    btn.classList.add("has-active");
+    setTimeout(() => document.getElementById("searchInput").focus(), 50);
+  }
+}
+
+function clearSearch() {
+  searchText = "";
+  document.getElementById("searchInput").value = "";
+  applyFilters();
+  toggleSearch();
+}
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchText = e.target.value.trim();
+  applyFilters();
+});
+
+function clearCats() {
+  activeCats.clear();
+  buildFilters();
+  applyFilters();
+  updateFilterBtnState();
+}
+
+function clearAreas() {
+  activeAreas.clear();
+  buildFilters();
+  applyFilters();
+  updateFilterBtnState();
+}
+
+function toggleShabbat() {
+  shabbatFilter = !shabbatFilter;
+  closeAllDropdowns();
+  // show/hide topbar pill
+  const btnShabbat = document.getElementById("btnShabbat");
+  const moreBtn    = document.getElementById("moreShabbatBtn");
+  btnShabbat.style.display = shabbatFilter ? "flex" : "none";
+  btnShabbat.classList.toggle("has-active", shabbatFilter);
+  if (moreBtn) {
+    moreBtn.style.borderColor  = shabbatFilter ? "var(--accent)" : "var(--border)";
+    moreBtn.style.background   = shabbatFilter ? "#e8f4f8"       : "var(--bg)";
+  }
+  applyFilters();
+}
+
+/* ═══════════════════════════════════════════════════
+   LOCATE ME
+   ═══════════════════════════════════════════════════ */
+function fitToActiveAreas() {
+  if (!activeAreas.size) return;
+  const pts = filteredPlaces.filter(p => p.lat && p.lng).map(p => [p.lat, p.lng]);
+  if (!pts.length) return;
+  if (pts.length === 1) {
+    map.setView(pts[0], 15, { animate: true });
+  } else {
+    map.fitBounds(L.latLngBounds(pts), { padding: [60, 60], animate: true, maxZoom: 16 });
+  }
+}
+
+function locateMe() {
+  if (!navigator.geolocation) { showToast("הדפדפן שלך לא תומך ב-GPS"); return; }
+  showToast("מאתר מיקום...");
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    if (window._meMarker) map.removeLayer(window._meMarker);
+    window._meMarker = L.circleMarker([lat, lng], {
+      radius: 10, color: "#fff", weight: 3, fillColor: "#E07B5A", fillOpacity: 1,
+    }).addTo(map).bindPopup("את/ה כאן ✨").openPopup();
+    map.setView([lat, lng], 15, { animate: true });
+    showToast("מיקום נמצא!");
+  }, () => showToast("לא הצלחנו לאתר את המיקום"));
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+/* ═══════════════════════════════════════════════════
+   GEOCODING (Nominatim fallback for text addresses)
+   ═══════════════════════════════════════════════════ */
+function isLatLng(str) {
+  return /^[\d.-]+\s*,\s*[\d.-]+$/.test(str.trim());
+}
+
+async function geocodeAddress(address) {
+  const url = "https://nominatim.openstreetmap.org/search?q="
+    + encodeURIComponent(address)
+    + "&format=json&limit=1&accept-language=he&countrycodes=il";
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (data && data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+  return null;
+}
+
+async function geocodeBatch(pending) {
+  showToast(`ממקם ${pending.length} כתובות… ⏳`);
+  for (const p of pending) {
+    try {
+      const result = await geocodeAddress(p.address);
+      if (result) {
+        const [lat, lng] = result;
+        PLACES.push({ name: p.name, cats: p.cats, area: p.area, lat, lng, displayAddress: p.displayAddress, instagram: p.instagram, shabbat: p.shabbat, notes: p.notes });
+        buildFilters(); applyFilters();
+      }
+    } catch (e) { console.warn("geocode נכשל:", p.name, e); }
+    await new Promise(r => setTimeout(r, 1100));
+  }
+  showToast("כל הכתובות מומקמו ✅");
+}
+
+/* ═══════════════════════════════════════════════════
+   PASTE MODAL
+   ═══════════════════════════════════════════════════ */
+function openPasteModal() {
+  document.getElementById("pasteBackdrop").classList.add("open");
+  document.getElementById("pasteModal").classList.add("open");
+  setTimeout(() => document.getElementById("pasteArea").focus(), 100);
+}
+
+function closePasteModal() {
+  document.getElementById("pasteBackdrop").classList.remove("open");
+  document.getElementById("pasteModal").classList.remove("open");
+}
+
+function parsePastedData() {
+  const raw = document.getElementById("pasteArea").value.trim();
+  if (!raw) { showToast("לא הודבק כלום 🙁"); return; }
+
+  // Google Sheets paste format is TSV (tab-separated)
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) { showToast("הנתונים לא תקינים"); return; }
+
+  // Skip header row, split each line by tab
+  const dataRows = lines.slice(1).map(line => line.split('\t').map(c => c.trim()));
+  processPlaceRows(dataRows);
+  closePasteModal();
+  document.getElementById("pasteArea").value = "";
+}
+
+/* ═══════════════════════════════════════════════════
+   LOAD FROM GOOGLE SHEETS
+   ═══════════════════════════════════════════════════ */
+function processPlaceRows(rows) {
+  // DEBUG — log exact category strings from Sheet
+  const debugCats = [...new Set(rows.flatMap(cols => [1,2,3].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
+  console.log("📋 קטגוריות מהשיט:", JSON.stringify(debugCats));
+
+  const ready = [], toGeocode = [];
+  for (const cols of rows) {
+    const name = (cols[0] || "").trim();
+    if (!name) continue;
+    const base = {
+      name,
+      cats:           [cols[1], cols[2], cols[3]].map(c => (c||"").trim()).filter(Boolean),
+      area:           (cols[4] || "").trim() || "כללי",
+      // col 5 = מיקום, col 6 = כתובת, col 7 = אינסטגרם, col 8 = פתוח בשבת, col 9 = הערות
+      displayAddress: (cols[6] || "").trim() || "",
+      instagram:      (cols[7] || "").trim() || "",
+      shabbat:        (cols[8] || "").trim() || "",
+      notes:          (cols[9] || "").trim() || "",
+    };
+    const locField = (cols[5] || "").trim();
+    if (isLatLng(locField)) {
+      const [lat, lng] = locField.split(",").map(s => parseFloat(s.trim()));
+      if (!isNaN(lat) && !isNaN(lng)) { ready.push({ ...base, lat, lng }); continue; }
+    }
+    if (locField && !isLatLng(locField)) { toGeocode.push({ ...base, address: locField }); continue; }
+    if (FALLBACK_COORDS[name]) {
+      const [lat, lng] = FALLBACK_COORDS[name].map(parseFloat);
+      ready.push({ ...base, lat, lng });
+    }
+  }
+  if (ready.length > 0) {
+    PLACES = ready;
+    showToast(`עודכן מה-Sheet: ${PLACES.length} מקומות ✅`);
+    buildFilters(); applyFilters();
+  }
+  if (toGeocode.length > 0) geocodeBatch(toGeocode);
+}
+
+function parseCSVRow(line) {
+  const result = []; let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  result.push(cur);
+  return result;
+}
+
+function onCSVData(csvText) {
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) return;
+  processPlaceRows(lines.slice(1).map(parseCSVRow));
+}
+
+function onSheetData(gviz) {
+  if (!gviz || !gviz.table) return;
+  const rows = gviz.table.rows || [];
+  if (!rows.length) return;
+  const cell = (row, i) => (row.c && row.c[i] && row.c[i].v != null) ? String(row.c[i].v).trim() : "";
+  processPlaceRows(rows.map(row => [0,1,2,3,4,5,6,7].map(i => cell(row, i))));
+}
+
+window["google"] = window["google"] || {};
+window["google"]["visualization"] = window["google"]["visualization"] || {};
+window["google"]["visualization"]["Query"] = { setResponse: onSheetData };
+
+function loadFromSheets() {
+  PLACES = Object.entries(FALLBACK_COORDS).map(([name, [lat, lng]]) => ({
+    name, cats: [], area: "כללי", lat: parseFloat(lat), lng: parseFloat(lng), displayAddress: "", instagram: "", shabbat: "", notes: "",
+  }));
+  buildFilters();
+  applyFilters();
+
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+  fetch(csvUrl)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+    .then(text => onCSVData(text))
+    .catch(() => {
+      const script = document.createElement("script");
+      script.src = GVIZ_URL;
+      script.onerror = () => console.warn("Sheet לא נגיש — נעשה שימוש בנתוני fallback");
+      document.head.appendChild(script);
+    });
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════ */
+loadFromSheets();
+updateCollectionBtn();
+
+</script>
+</body>
+</html>
