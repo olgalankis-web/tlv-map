@@ -170,19 +170,17 @@
 
 
     /* ─── Popup save button ─── */
-    .popup-save-btn {
-      background: none;
+    .popup-save-heart {
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+      background: #f5f5f5;
       border: none;
-      cursor: pointer;
-      font-size: 18px;
-      padding: 2px 4px;
-      line-height: 1;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; line-height: 1; padding: 0;
       opacity: 0.3;
       transition: opacity .2s, transform .15s;
     }
-    .popup-save-btn.saved { opacity: 1; }
-    .popup-save-btn:hover { transform: scale(1.2); opacity: 1; }
+    .popup-save-heart.saved { opacity: 1; }
+    .popup-save-heart:hover { transform: scale(1.1); opacity: 1; }
 
     /* ─── Dropdown panels ─── */
     .dropdown {
@@ -513,8 +511,8 @@
     }
     .popup-address a:hover { text-decoration-color: var(--dark); }
     .popup-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; justify-content: flex-start; direction: rtl; width: 100%; }
-    .popup-footer { display: flex; align-items: center; justify-content: flex-start; gap: 10px; direction: rtl; width: 100%; }
-    .popup-notes { font-size: 12px; color: var(--muted); flex: 1; text-align: right; }
+    .popup-notes-row { font-size: 12px; color: var(--muted); text-align: right; width: 100%; margin-bottom: 10px; }
+    .popup-footer { display: flex; align-items: center; justify-content: flex-start; gap: 8px; direction: rtl; width: 100%; }
     .popup-ig-icon {
       width: 30px; height: 30px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
       background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
@@ -688,7 +686,7 @@
 
   <!-- Collection -->
   <button class="collection-pill" id="btnCollection" onclick="toggleCollection()">
-    🔖 האוסף שלי <span class="collection-badge" id="collectionBadge" style="display:none">0</span>
+    🩷 האוסף שלי <span class="collection-badge" id="collectionBadge" style="display:none">0</span>
   </button>
 
   <!-- About -->
@@ -772,7 +770,7 @@
 
   <!-- Collection header — shown only in collection mode -->
   <div id="collectionHeader" style="display:none; align-items:center; justify-content:space-between; padding:10px 16px 6px; border-bottom:1px solid var(--border); flex-shrink:0; direction:rtl;">
-    <span style="font-size:14px; font-weight:700; color:var(--dark);">🔖 האוסף שלי</span>
+    <span style="font-size:14px; font-weight:700; color:var(--dark);">🩷 האוסף שלי</span>
     <button onclick="buildRoute()" style="background:#434343;color:#fff;border:none;border-radius:50px;padding:6px 14px;font-family:'Assistant',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#434343'">
       צור מסלול הליכה
     </button>
@@ -1145,18 +1143,19 @@ function popupHTML(p) {
     : "";
 
   const notesHTML = p.notes
-    ? `<div class="popup-notes">${p.notes}</div>` : "";
+    ? `<div class="popup-notes-row">${p.notes}</div>` : "";
 
   const isSaved = savedNames.has(p.name);
   const safeName = p.name.replace(/'/g, "\\'");
-  const saveBtn = `<button class="popup-save-btn${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? 'הסר מהאוסף' : 'שמור לאוסף'}">📌</button>`;
+  const saveBtn = `<button class="popup-save-heart${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? 'הסר מהאוסף' : 'שמור לאוסף'}">🩷</button>`;
 
   return `<div class="popup-inner">
     <div class="popup-name">${p.name}</div>
     <div class="popup-area">${p.area}</div>
     ${addressHTML}
     <div class="popup-tags">${tags}</div>
-    <div class="popup-footer">${igIcon}${notesHTML}${saveBtn}</div>
+    ${notesHTML}
+    <div class="popup-footer">${igIcon}${saveBtn}</div>
   </div>`;
 }
 
