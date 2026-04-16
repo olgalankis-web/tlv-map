@@ -227,96 +227,6 @@
     .chip:hover { border-color: var(--accent); color: var(--accent); }
     .chip.active { color: #fff !important; border-color: transparent !important; }
 
-    /* ─── Paste modal ─── */
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      z-index: 2000;
-    }
-    .modal-backdrop.open { display: block; }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 2001;
-      background: var(--surface);
-      border-radius: 18px;
-      box-shadow: 0 16px 60px rgba(0,0,0,.22);
-      width: 480px;
-      max-width: calc(100vw - 32px);
-      direction: rtl;
-      font-family: 'Assistant', sans-serif;
-    }
-    .modal.open { display: block; }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .modal-header strong { font-size: 16px; }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      color: var(--muted);
-      line-height: 1;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    .modal-close:hover { background: var(--bg); }
-
-    .modal-body { padding: 18px 20px; }
-    .modal-instructions {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-bottom: 14px;
-    }
-    .modal-instructions strong { color: var(--text); }
-    .modal-textarea {
-      width: 100%;
-      height: 130px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      font-family: inherit;
-      font-size: 13px;
-      direction: rtl;
-      resize: none;
-      outline: none;
-      transition: border-color .2s;
-    }
-    .modal-textarea:focus { border-color: var(--accent); }
-
-    .modal-footer {
-      padding: 14px 20px 18px;
-      display: flex;
-      justify-content: flex-start;
-      gap: 10px;
-    }
-    .modal-btn {
-      padding: 10px 22px;
-      border-radius: 50px;
-      border: none;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .18s;
-    }
-    .modal-btn-primary { background: var(--accent); color: #fff; }
-    .modal-btn-primary:hover { background: #c96a48; }
-    .modal-btn-secondary { background: var(--bg); color: var(--text); }
-    .modal-btn-secondary:hover { background: var(--border); }
 
     /* ─── Sidebar ─── */
     .sidebar {
@@ -672,7 +582,7 @@
       אזור <span class="arrow">▾</span>
     </button>
     <button class="filter-pill" id="btnShabbat" onclick="toggleShabbat()" style="display:none">
-      ✡️ פתוח בשבת
+      פתוח בשבת
     </button>
     <button class="filter-pill" id="btnMore" onclick="toggleDropdown('morePanel','btnMore')">
       <span style="font-size:16px;letter-spacing:2px">···</span>
@@ -718,42 +628,13 @@
 <div class="dropdown" id="morePanel" style="right:14px">
   <div class="dropdown-title">אפשרויות נוספות</div>
   <button id="moreShabbatBtn" onclick="toggleShabbat()" style="margin-top:6px;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;cursor:pointer;direction:rtl;transition:border-color .2s;text-align:right" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-    <span style="font-size:18px">✡️</span>
     <div>
       <div style="font-weight:500">פתוח בשבת</div>
       <div style="font-size:11px;color:var(--muted)">הצג מקומות פתוחים בשבת</div>
     </div>
   </button>
-  <button onclick="closeAllDropdowns();openPasteModal()" style="margin-top:6px;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;cursor:pointer;direction:rtl;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-    <span style="font-size:18px">📋</span>
-    <div style="text-align:right">
-      <div style="font-weight:500">עדכון נתונים מהשיט</div>
-      <div style="font-size:11px;color:var(--muted)">העתק-הדבק מ-Google Sheets</div>
-    </div>
-  </button>
 </div>
 
-<!-- Paste modal -->
-<div class="modal-backdrop" id="pasteBackdrop" onclick="closePasteModal()"></div>
-<div class="modal" id="pasteModal">
-  <div class="modal-header">
-    <strong>עדכון נתונים מ-Google Sheets</strong>
-    <button class="modal-close" onclick="closePasteModal()">✕</button>
-  </div>
-  <div class="modal-body">
-    <div class="modal-instructions">
-      <strong>שלב 1:</strong> פתחי את ה-<a href="https://docs.google.com/spreadsheets/d/1iJ_0Szj1BK3dXcSuPZCTZ-8fC8dqZz9xdK1Zf-MJVOM" target="_blank" style="color:var(--accent)">Google Sheet</a><br>
-      <strong>שלב 2:</strong> בחרי הכל <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px">Cmd+A</kbd><br>
-      <strong>שלב 3:</strong> העתיקי <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px">Cmd+C</kbd><br>
-      <strong>שלב 4:</strong> הדביקי כאן 👇
-    </div>
-    <textarea class="modal-textarea" id="pasteArea" placeholder="הדביקי כאן את הנתונים מהשיט…"></textarea>
-  </div>
-  <div class="modal-footer">
-    <button class="modal-btn modal-btn-primary" onclick="parsePastedData()">עדכן מפה ✅</button>
-    <button class="modal-btn modal-btn-secondary" onclick="closePasteModal()">ביטול</button>
-  </div>
-</div>
 
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
@@ -1536,34 +1417,6 @@ async function geocodeBatch(pending) {
   showToast("כל הכתובות מומקמו ✅");
 }
 
-/* ═══════════════════════════════════════════════════
-   PASTE MODAL
-   ═══════════════════════════════════════════════════ */
-function openPasteModal() {
-  document.getElementById("pasteBackdrop").classList.add("open");
-  document.getElementById("pasteModal").classList.add("open");
-  setTimeout(() => document.getElementById("pasteArea").focus(), 100);
-}
-
-function closePasteModal() {
-  document.getElementById("pasteBackdrop").classList.remove("open");
-  document.getElementById("pasteModal").classList.remove("open");
-}
-
-function parsePastedData() {
-  const raw = document.getElementById("pasteArea").value.trim();
-  if (!raw) { showToast("לא הודבק כלום 🙁"); return; }
-
-  // Google Sheets paste format is TSV (tab-separated)
-  const lines = raw.split('\n').filter(l => l.trim());
-  if (lines.length < 2) { showToast("הנתונים לא תקינים"); return; }
-
-  // Skip header row, split each line by tab
-  const dataRows = lines.slice(1).map(line => line.split('\t').map(c => c.trim()));
-  processPlaceRows(dataRows);
-  closePasteModal();
-  document.getElementById("pasteArea").value = "";
-}
 
 /* ═══════════════════════════════════════════════════
    LOAD FROM GOOGLE SHEETS
