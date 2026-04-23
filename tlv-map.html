@@ -989,27 +989,24 @@ function openCoffeeLink() {
 function loadAboutContent() {
   const parseCell = s => s.trim().replace(/^"|"$/g, "").replace(/""/g, '"');
 
-  // Fetch title + body from L18:L19
-  fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&range=L18:L19`)
+  fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&range=L18:L21`)
     .then(r => r.text())
     .then(text => {
-      const lines = text.trim().split(/\r?\n/);
-      const title = lines[0] ? parseCell(lines[0]) : "";
-      const body  = lines[1] ? parseCell(lines[1]) : "";
+      // gviz skips empty rows, so split and filter
+      const lines = text.trim().split(/\r?\n/).map(parseCell);
+      console.log("📋 about lines:", lines);
+
+      const title = lines[0] || "";
+      const body  = lines[1] || "";
+      // Coffee URL is the last non-empty line (L21, even if L20 is empty)
+      const url   = lines.filter(l => l.startsWith("http")).pop() || "";
+      console.log("☕ coffeeUrl:", url);
+
       if (title) document.getElementById("aboutModalTitle").textContent = title;
       if (body)  document.getElementById("aboutModalBody").innerHTML    = body.replace(/\\n/g, "<br>");
+      if (url)   aboutCoffeeUrl = url;
     })
-    .catch(e => console.warn("about title/body fetch failed:", e));
-
-  // Fetch coffee URL from L21 separately
-  fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&range=L21`)
-    .then(r => r.text())
-    .then(text => {
-      const url = parseCell(text);
-      console.log("☕ coffeeUrl:", url);
-      if (url) aboutCoffeeUrl = url;
-    })
-    .catch(e => console.warn("coffee url fetch failed:", e));
+    .catch(e => console.warn("about fetch failed:", e));
 }
 
 function openAboutModal() {
