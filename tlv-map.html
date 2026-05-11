@@ -1458,7 +1458,6 @@ function processPlaceRows(rows) {
   }
   if (ready.length > 0) {
     PLACES = ready;
-    showToast(`עודכן מה-Sheet: ${PLACES.length} מקומות ✅`);
     buildFilters(); applyFilters();
   }
   if (toGeocode.length > 0) geocodeBatch(toGeocode);
