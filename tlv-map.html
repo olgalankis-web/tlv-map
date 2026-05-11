@@ -556,6 +556,25 @@
       z-index: 1001;
     }
     .dropdown-backdrop.open { display: block; }
+    /* ─── Language toggle ─── */
+    .lang-toggle {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-family: 'Assistant', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text);
+      white-space: nowrap;
+      transition: all .2s;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+    .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-toggle.active { background: #434343; color: #fff; border-color: #434343; }
+
     /* ─── Global font size bump (+1px) ─── */
     .search-input       { font-size: 15px !important; }
     .filter-pill        { font-size: 15px !important; }
@@ -591,13 +610,13 @@
   <!-- Filters -->
   <div class="filter-pills" id="filterPills">
     <button class="filter-pill" id="btnCat" onclick="toggleDropdown('catPanel','btnCat')">
-      קטגוריה <span class="arrow">▾</span>
+      <span id="catBtnText">קטגוריה</span> <span class="arrow">▾</span>
     </button>
     <button class="filter-pill" id="btnArea" onclick="toggleDropdown('areaPanel','btnArea')">
-      אזור <span class="arrow">▾</span>
+      <span id="areaBtnText">אזור</span> <span class="arrow">▾</span>
     </button>
     <button class="filter-pill" id="btnShabbat" onclick="toggleShabbat()" style="display:none">
-      פתוח בשבת
+      <span id="shabbatBtnText">פתוח בשבת</span>
     </button>
     <button class="filter-pill" id="btnMore" onclick="toggleDropdown('morePanel','btnMore')">
       <span style="font-size:16px;letter-spacing:2px">···</span>
@@ -609,14 +628,17 @@
     </div>
   </div>
 
+  <!-- Language toggle -->
+  <button class="lang-toggle" id="btnLang" onclick="toggleLanguage()">EN</button>
+
   <!-- Collection -->
   <button class="collection-pill" id="btnCollection" onclick="toggleCollection()">
-    🩷 האוסף שלי <span class="collection-badge" id="collectionBadge" style="display:none">0</span>
+    🩷 <span id="collectionBtnText">האוסף שלי</span> <span class="collection-badge" id="collectionBadge" style="display:none">0</span>
   </button>
 
   <!-- About -->
-  <button class="collection-pill" onclick="openAboutModal()" title="מאחורי הקלעים">
-    ✨ פרגנו בכוס קפה
+  <button class="collection-pill" id="btnAbout" onclick="openAboutModal()" title="מאחורי הקלעים">
+    ✨ <span id="aboutBtnText">פרגנו בכוס קפה</span>
   </button>
 
 </div>
@@ -624,8 +646,8 @@
 <!-- Category dropdown -->
 <div class="dropdown" id="catPanel" style="right:14px">
   <div class="dropdown-header">
-    <span class="dropdown-title">קטגוריה</span>
-    <button class="dropdown-clear" onclick="clearCats()">נקה הכל</button>
+    <span class="dropdown-title" id="catPanelTitle">קטגוריה</span>
+    <button class="dropdown-clear" id="catClearBtn" onclick="clearCats()">נקה הכל</button>
   </div>
   <div class="chips-wrap" id="catChips"></div>
 </div>
@@ -633,19 +655,19 @@
 <!-- Area dropdown -->
 <div class="dropdown" id="areaPanel" style="right:14px">
   <div class="dropdown-header">
-    <span class="dropdown-title">אזור</span>
-    <button class="dropdown-clear" onclick="clearAreas()">נקה הכל</button>
+    <span class="dropdown-title" id="areaPanelTitle">אזור</span>
+    <button class="dropdown-clear" id="areaClearBtn" onclick="clearAreas()">נקה הכל</button>
   </div>
   <div class="chips-wrap" id="areaChips"></div>
 </div>
 
 <!-- More panel -->
 <div class="dropdown" id="morePanel" style="right:14px">
-  <div class="dropdown-title">אפשרויות נוספות</div>
+  <div class="dropdown-title" id="morePanelTitle">אפשרויות נוספות</div>
   <button id="moreShabbatBtn" onclick="toggleShabbat()" style="margin-top:6px;display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:inherit;font-size:14px;cursor:pointer;direction:rtl;transition:border-color .2s;text-align:right" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
     <div>
-      <div style="font-weight:500">פתוח בשבת</div>
-      <div style="font-size:11px;color:var(--muted)">הצג מקומות פתוחים בשבת</div>
+      <div id="shabbatLabel" style="font-weight:500">פתוח בשבת</div>
+      <div id="shabbatSub" style="font-size:11px;color:var(--muted)">הצג מקומות פתוחים בשבת</div>
     </div>
   </button>
 </div>
@@ -666,8 +688,8 @@
 
   <!-- Collection header — shown only in collection mode -->
   <div id="collectionHeader" style="display:none; align-items:center; justify-content:space-between; padding:10px 16px 6px; border-bottom:1px solid var(--border); flex-shrink:0; direction:rtl;">
-    <span style="font-size:14px; font-weight:700; color:var(--dark);">🩷 האוסף שלי</span>
-    <button onclick="buildRoute()" style="background:#434343;color:#fff;border:none;border-radius:50px;padding:6px 14px;font-family:'Assistant',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#434343'">
+    <span id="collHeaderTitle" style="font-size:14px; font-weight:700; color:var(--dark);">🩷 האוסף שלי</span>
+    <button id="buildRouteBtn" onclick="buildRoute()" style="background:#434343;color:#fff;border:none;border-radius:50px;padding:6px 14px;font-family:'Assistant',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#434343'">
       צור מסלול הליכה
     </button>
   </div>
@@ -733,10 +755,10 @@
       </svg>
       <div id="igModalHandle"></div>
       <a id="igOpenBtn" href="#" target="_blank">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="white">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white" style="flex-shrink:0">
           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
         </svg>
-        פתח באינסטגרם
+        <span id="igOpenBtnText">פתח באינסטגרם</span>
       </a>
     </div>
   </div>
@@ -762,20 +784,114 @@ if (typeof L === "undefined") {
    CATEGORY STYLES  — emoji + color per category
    ═══════════════════════════════════════════════════ */
 const CAT_STYLE = {
-  "קפה":                  { emoji: "☕",   color: "#ec994d" },
-  "משהו מתוק":            { emoji: "🍨",   color: "#f2b6a3" },
-  "אוכל קזואלי ליום":    { emoji: "🥪",   color: "#f4d788" },
-  "אוכל קזואלי לערב":    { emoji: "🍝",   color: "#94bdbb" },
-  "ערב יותר דרסד-אפ":    { emoji: "👠",   color: "#20607f" },
-  "ערב כיפי":             { emoji: "🎟️",  color: "#94bdbb" },
-  "לשבת לעבוד":           { emoji: "💻",   color: "#e0665a" },
-  "אוכל טוב לקנות לקחת": { emoji: "🛒",   color: "#e79c74" },
-  "מקום יפה לשבת בו":    { emoji: "🌄",   color: "#657651" },
-  "מקום לשוטט בו":        { emoji: "🚶‍♀️", color: "#c0af5a" },
-  "דברים יפים לקנות":     { emoji: "🛍️",  color: "#d3cce3" },
-  "מרכז מסחרי":           { emoji: "🏢",   color: "#a39ab8" },
-  "תוכן ותרבות":          { emoji: "🎟️",  color: "#94bdbb" },
+  "קפה":                  { emoji: "☕",   color: "#ec994d", en: "Coffee" },
+  "משהו מתוק":            { emoji: "🍨",   color: "#f2b6a3", en: "Desserts" },
+  "אוכל קזואלי ליום":    { emoji: "🥪",   color: "#f4d788", en: "Casual Lunch" },
+  "אוכל קזואלי לערב":    { emoji: "🍝",   color: "#94bdbb", en: "Casual Dinner" },
+  "ערב יותר דרסד-אפ":    { emoji: "👠",   color: "#20607f", en: "Dressed-Up Evening" },
+  "ערב כיפי":             { emoji: "🎟️",  color: "#94bdbb", en: "Fun Night Out" },
+  "לשבת לעבוד":           { emoji: "💻",   color: "#e0665a", en: "Work Spots" },
+  "אוכל טוב לקנות לקחת": { emoji: "🛒",   color: "#e79c74", en: "Food To-Go" },
+  "מקום יפה לשבת בו":    { emoji: "🌄",   color: "#657651", en: "Scenic Spots" },
+  "מקום לשוטט בו":        { emoji: "🚶‍♀️", color: "#c0af5a", en: "Places to Wander" },
+  "דברים יפים לקנות":     { emoji: "🛍️",  color: "#d3cce3", en: "Shopping" },
+  "מרכז מסחרי":           { emoji: "🏢",   color: "#a39ab8", en: "Mall" },
+  "תוכן ותרבות":          { emoji: "🎟️",  color: "#94bdbb", en: "Arts & Culture" },
 };
+
+/* ═══════════════════════════════════════════════════
+   LANGUAGE / TRANSLATIONS
+   ═══════════════════════════════════════════════════ */
+let lang = (function(){ try { return localStorage.getItem("tlv_lang") || "he"; } catch(e){ return "he"; } })();
+
+const TRANSLATIONS = {
+  he: {
+    collection_btn:  "האוסף שלי",
+    coffee_btn:      "פרגנו בכוס קפה",
+    category_btn:    "קטגוריה",
+    area_btn:        "אזור",
+    shabbat_btn:     "פתוח בשבת",
+    shabbat_label:   "פתוח בשבת",
+    shabbat_sub:     "הצג מקומות פתוחים בשבת",
+    more_title:      "אפשרויות נוספות",
+    cat_title:       "קטגוריה",
+    area_title:      "אזור",
+    clear:           "נקה הכל",
+    search_ph:       "חיפוש...",
+    places:          n => `${n} מקומות`,
+    coll_header:     "🩷 האוסף שלי",
+    build_route:     "צור מסלול הליכה",
+    empty_coll:      "חזרי אחורה ושמרי מקומות בכפתור ה-🩷",
+    no_places:       "לא נמצאו מקומות 🙁",
+    save_title:      "שמור לאוסף",
+    remove_title:    "הסר מהאוסף",
+    open_ig:         "פתח באינסטגרם",
+  },
+  en: {
+    collection_btn:  "My Collection",
+    coffee_btn:      "Support ✨",
+    category_btn:    "Category",
+    area_btn:        "Area",
+    shabbat_btn:     "Open Shabbat",
+    shabbat_label:   "Open on Shabbat",
+    shabbat_sub:     "Show places open on Shabbat",
+    more_title:      "More Options",
+    cat_title:       "Category",
+    area_title:      "Area",
+    clear:           "Clear",
+    search_ph:       "Search...",
+    places:          n => `${n} places`,
+    coll_header:     "🩷 My Collection",
+    build_route:     "Build Walking Route",
+    empty_coll:      "Go back and save places with 🩷",
+    no_places:       "No places found 🙁",
+    save_title:      "Save to collection",
+    remove_title:    "Remove",
+    open_ig:         "Open on Instagram",
+  }
+};
+
+function t(key, arg) {
+  const val = (TRANSLATIONS[lang] || TRANSLATIONS.he)[key] || TRANSLATIONS.he[key] || key;
+  return typeof val === "function" ? val(arg) : val;
+}
+
+function catLabel(cat) {
+  if (lang === "en") { const s = catStyle(cat); return s.en || cat; }
+  return cat;
+}
+
+function applyTranslations() {
+  document.getElementById("collectionBtnText").textContent  = t("collection_btn");
+  document.getElementById("aboutBtnText").textContent       = t("coffee_btn");
+  document.getElementById("catBtnText").textContent         = t("category_btn");
+  document.getElementById("areaBtnText").textContent        = t("area_btn");
+  document.getElementById("shabbatBtnText").textContent     = t("shabbat_btn");
+  document.getElementById("catPanelTitle").textContent      = t("cat_title");
+  document.getElementById("catClearBtn").textContent        = t("clear");
+  document.getElementById("areaPanelTitle").textContent     = t("area_title");
+  document.getElementById("areaClearBtn").textContent       = t("clear");
+  document.getElementById("morePanelTitle").textContent     = t("more_title");
+  document.getElementById("shabbatLabel").textContent       = t("shabbat_label");
+  document.getElementById("shabbatSub").textContent         = t("shabbat_sub");
+  document.getElementById("searchInput").placeholder        = t("search_ph");
+  document.getElementById("collHeaderTitle").textContent    = t("coll_header");
+  document.getElementById("buildRouteBtn").textContent      = t("build_route");
+  document.getElementById("igOpenBtnText").textContent      = t("open_ig");
+
+  const btn = document.getElementById("btnLang");
+  btn.textContent = lang === "he" ? "EN" : "עב";
+  btn.classList.toggle("active", lang === "en");
+
+  buildFilters();
+  applyFilters();
+}
+
+function toggleLanguage() {
+  lang = lang === "he" ? "en" : "he";
+  try { localStorage.setItem("tlv_lang", lang); } catch(e) {}
+  applyTranslations();
+}
 
 function catStyle(cat) {
   if (!cat) return { emoji: "📍", color: "#888" };
@@ -1048,7 +1164,7 @@ document.getElementById("igModal").addEventListener("click", function(e) {
 function popupHTML(p) {
   const tags = p.cats.map(c => {
     const s = catStyle(c);
-    return `<span class="cat-tag" style="background:${s.color};color:#fff">${s.emoji} ${c}</span>`;
+    return `<span class="cat-tag" style="background:${s.color};color:#fff">${s.emoji} ${catLabel(c)}</span>`;
   }).join("");
 
   const addressHTML = p.displayAddress
@@ -1074,7 +1190,7 @@ function popupHTML(p) {
 
   const isSaved = savedNames.has(p.name);
   const safeName = p.name.replace(/'/g, "\\'");
-  const saveBtn = `<button class="popup-save-heart${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? 'הסר מהאוסף' : 'שמור לאוסף'}">🩷</button>`;
+  const saveBtn = `<button class="popup-save-heart${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? t('remove_title') : t('save_title')}">🩷</button>`;
 
   return `<div class="popup-inner">
     <div class="popup-name">${p.name}</div>
@@ -1131,15 +1247,15 @@ function selectPlace(idx, filtered) {
    ═══════════════════════════════════════════════════ */
 function renderList(filtered) {
   const list = document.getElementById("placesList");
-  document.getElementById("countBadge").textContent = `${filtered.length} מקומות`;
+  document.getElementById("countBadge").textContent = t("places", filtered.length);
 
   if (!filtered.length) {
     const backHint = collectionMode
       ? `<div onclick="toggleCollection()" style="margin-top:12px;cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;text-underline-offset:2px">
-          חזרי אחורה ושמרי מקומות בכפתור ה-📌
+          ${t("empty_coll")}
         </div>`
       : "";
-    list.innerHTML = `<div style="padding:28px;text-align:center;color:var(--muted);font-size:14px;direction:rtl">לא נמצאו מקומות 🙁${backHint}</div>`;
+    list.innerHTML = `<div style="padding:28px;text-align:center;color:var(--muted);font-size:14px;direction:rtl">${t("no_places")}${backHint}</div>`;
     return;
   }
 
@@ -1171,11 +1287,11 @@ function renderList(filtered) {
         : p.cats.slice(1);
       const extraTags = visibleCats.map(c => {
         const cs = catStyle(c);
-        return `<span class="cat-tag" style="background:${cs.color};color:#fff">${cs.emoji} ${c}</span>`;
+        return `<span class="cat-tag" style="background:${cs.color};color:#fff">${cs.emoji} ${catLabel(c)}</span>`;
       }).join("");
       const safeName = p.name.replace(/'/g, "\\'");
       const removeBtn = collectionMode
-        ? `<button onclick="event.stopPropagation();toggleSavePlace('${safeName}',null)" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .15s" onmouseover="this.style.color='#555'" onmouseout="this.style.color='#aaa'" title="הסר מהאוסף">✕</button>`
+        ? `<button onclick="event.stopPropagation();toggleSavePlace('${safeName}',null)" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .15s" onmouseover="this.style.color='#555'" onmouseout="this.style.color='#aaa'" title="${t('remove_title')}">✕</button>`
         : "";
       return `<div class="place-card" id="card-${i}" onclick="selectPlace(${i}, filteredPlaces)" style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;min-width:0">
@@ -1189,7 +1305,7 @@ function renderList(filtered) {
 
     const header = showHeaders ? `<div class="cat-group-header" style="background:${s.color}">
         <span style="font-size:18px">${s.emoji}</span>
-        <span>${cat}</span>
+        <span>${catLabel(cat)}</span>
         <span class="cat-count">${groups[cat].length}</span>
       </div>` : "";
 
@@ -1251,7 +1367,7 @@ function buildFilters() {
     const chip = document.createElement("button");
     chip.className = "chip";
     chip.style.cssText = `background:${s.color};color:#fff;border:1.5px solid ${isActive ? "#434343" : "transparent"}`;
-    chip.innerHTML = `${s.emoji} ${c}`;
+    chip.innerHTML = `${s.emoji} ${catLabel(c)}`;
     chip.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
       buildFilters();
@@ -1533,6 +1649,7 @@ function loadFromSheets() {
 loadFromSheets();
 loadAboutContent();
 updateCollectionBtn();
+if (lang === "en") applyTranslations();
 
 </script>
 </body>
