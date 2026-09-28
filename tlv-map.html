@@ -1052,9 +1052,10 @@ let markers     = {};
 if (typeof L === "undefined") { throw new Error("Leaflet לא נטען"); }
 
 const map = L.map("map", { zoomControl: false }).setView([32.0800, 34.7793], 13);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+  attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, and the GIS user community',
   maxZoom: 19,
+  maxNativeZoom: 16,
 }).addTo(map);
 L.control.zoom({ position: "bottomleft" }).addTo(map);
 
