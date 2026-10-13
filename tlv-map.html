@@ -502,7 +502,7 @@
       font-size: 13px;
       font-family: 'Assistant', sans-serif;
       z-index: 9999;
-      transition: transform .3s ease, opacity .3s ease;
+      transition: transform .4s ease, opacity .6s ease;
       pointer-events: none;
       white-space: pre-line;
       max-width: min(88vw, 340px);
@@ -1938,7 +1938,7 @@ function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg.replace(/\\n/g, "\n");
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
+  setTimeout(() => t.classList.remove("show"), 4000);
 }
 
 /* ═══════════════════════════════════════════════════
