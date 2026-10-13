@@ -1072,6 +1072,7 @@ const TRANSLATIONS = {
 /* Settings sheet translations — loaded dynamically */
 let settingsTranslations = {};  // Hebrew → English for categories, areas, UI strings
 let aboutFromSettings = { title: "", titleEn: "", body: "", bodyEn: "", url: "" };
+let emptyCollectionMsg = { he: "", en: "" };
 
 function loadSettings() {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("הגדרות")}`;
@@ -1086,6 +1087,8 @@ function loadSettings() {
         if (!type) return;
         if (type === "cat" || type === "area" || type === "ui") {
           if (he) settingsTranslations[he] = en || he;
+        } else if (type === "empty_collection") {
+          emptyCollectionMsg.he = he; emptyCollectionMsg.en = en || he;
         } else if (type === "about_title") {
           aboutFromSettings.title = he; aboutFromSettings.titleEn = en;
         } else if (type === "about_body") {
@@ -1299,6 +1302,10 @@ function updateCollectionBtn() {
 }
 
 function toggleCollection() {
+  if (!collectionMode && savedNames.size === 0) {
+    const msg = lang === "en" ? emptyCollectionMsg.en : emptyCollectionMsg.he;
+    if (msg) { showToast(msg); return; }
+  }
   collectionMode = !collectionMode;
   updateCollectionBtn();
   applyFilters();
