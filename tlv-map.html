@@ -1631,7 +1631,7 @@ async function geocodeBatch(pending) {
    ═══════════════════════════════════════════════════ */
 function processPlaceRows(rows) {
   // DEBUG — log exact category strings from Sheet
-  const debugCats = [...new Set(rows.flatMap(cols => [1,3,4].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
+  const debugCats = [...new Set(rows.flatMap(cols => [2,3,4].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
   console.log("📋 קטגוריות מהשיט:", JSON.stringify(debugCats));
 
   const ready = [], toGeocode = [];
@@ -1641,8 +1641,8 @@ function processPlaceRows(rows) {
     const base = {
       name,
       // col 1 = שם באנגלית, col 2,3,4 = קטגוריות, col 5 = אזור, col 6 = מיקום, col 7 = כתובת, col 8 = אינסטגרם, col 9 = שבת, col 10 = הערות, col 11 = הערות באנגלית
-      nameEn:         (cols[2] || "").trim() || "",
-      cats:           [cols[1], cols[3], cols[4]].map(c => (c||"").trim()).filter(Boolean),
+      nameEn:         (cols[1] || "").trim() || "",
+      cats:           [cols[2], cols[3], cols[4]].map(c => (c||"").trim()).filter(Boolean),
       area:           (cols[5] || "").trim() || "כללי",
       displayAddress: (cols[7] || "").trim() || "",
       instagram:      (cols[8] || "").trim() || "",
