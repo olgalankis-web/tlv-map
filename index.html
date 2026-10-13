@@ -1495,7 +1495,7 @@ function getIcon(place, isActive = false) {
   }).join("");
 
   return L.divIcon({
-    html: `<div style="display:flex;align-items:center;gap:${gap}px">${circles}</div>`,
+    html: `<div style="display:flex;align-items:center;gap:${gap}px;width:${totalW}px;height:${size}px">${circles}</div>`,
     className: "",
     iconSize:    [totalW, size],
     iconAnchor:  [totalW / 2, size / 2],
