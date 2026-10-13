@@ -733,11 +733,23 @@
         font-size: 13px; font-weight: 600; gap: 6px;
       }
 
+      /* ── Map starts below the 3-row header (no overlap) ── */
+      #map { top: 152px !important; }
+
+      /* ── Attribution: tiny ── */
+      .leaflet-control-attribution {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+      }
+
       /* ── Popup ── */
       .leaflet-popup-content-wrapper { max-width: 88vw !important; }
       .leaflet-popup-content { min-width: unset !important; }
       .popup-inner { min-width: unset !important; }
     }
+
+    /* Attribution small on desktop too */
+    .leaflet-control-attribution { font-size: 9px; }
 
     /* ─── Global font size bump (+1px) ─── */
     .search-input       { font-size: 15px !important; }
@@ -845,7 +857,7 @@
 
 
 <!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar closed" id="sidebar">
   <div class="sidebar-handle"></div>
   <div class="sidebar-header">
     <button class="hamburger-btn" onclick="toggleSidebar()" title="סגור">
@@ -1300,7 +1312,8 @@ L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_L
   maxZoom: 19,
   maxNativeZoom: 16,
 }).addTo(map);
-L.control.zoom({ position: "bottomleft" }).addTo(map);
+// Zoom control: desktop only
+if (window.innerWidth > 640) L.control.zoom({ position: "bottomleft" }).addTo(map);
 
 /* ═══════════════════════════════════════════════════
    MARKER FACTORY
@@ -1492,11 +1505,6 @@ function selectPlace(idx, filtered, fromList = true) {
   markers[idx].openPopup();
   map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
 
-  // On mobile: pan down to clear the 3-row header (~150px)
-  if (isMobile) {
-    setTimeout(() => map.panBy([0, 120], { animate: true, duration: 0.25 }), 400);
-  }
-
   if (!fromList) return; // map tap: skip list highlighting
   document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
   const card = document.getElementById(`card-${idx}`);
@@ -1658,9 +1666,11 @@ function buildMobileFilters() {
 
   cats.forEach(c => {
     const s = catStyle(c);
+    const isActive = activeCats.has(c);
     const btn = document.createElement("button");
-    btn.className = "mobile-chip" + (activeCats.has(c) ? " active-chip" : "");
-    if (!activeCats.has(c)) btn.style.cssText = `border-color:${s.color};color:${s.color}`;
+    btn.className = "mobile-chip";
+    // Always show colored bg + white text (like desktop); active = dark border highlight
+    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:${isActive ? "2.5px" : "1.5px"}`;
     btn.innerHTML = `${s.emoji} ${catLabel(c)}`;
     btn.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
@@ -1671,7 +1681,9 @@ function buildMobileFilters() {
 
   areas.forEach(a => {
     const btn = document.createElement("button");
-    btn.className = "mobile-chip" + (activeAreas.has(a) ? " active-chip" : "");
+    const isActiveA = activeAreas.has(a);
+    btn.className = "mobile-chip" + (isActiveA ? " active-chip" : "");
+    btn.style.color = isActiveA ? "#fff" : "#1a1a1a";
     btn.textContent = areaLabel(a);
     btn.onclick = () => {
       activeAreas.has(a) ? activeAreas.delete(a) : activeAreas.add(a);
@@ -1964,9 +1976,9 @@ loadFromSheets();
 loadSettings();
 updateCollectionBtn();
 if (lang === "en") applyTranslations();
-// Sidebar always starts closed on mobile
-if (window.innerWidth <= 640) {
-  document.getElementById("sidebar").classList.add("closed");
+// Desktop: open sidebar by default
+if (window.innerWidth > 640) {
+  document.getElementById("sidebar").classList.remove("closed");
 }
 
 </script>
