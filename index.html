@@ -1486,20 +1486,20 @@ map.on('click', function() {
    MARKER FACTORY
    ═══════════════════════════════════════════════════ */
 function getIcon(place, isActive = false) {
-  const size  = isActive ? 42 : 32;
-  const cats  = place.cats.length ? place.cats.slice(0, 3) : [""];
-  const gap   = 4;
-  const totalW = cats.length * size + (cats.length - 1) * gap;
+  const size    = isActive ? 42 : 32;
+  const cats    = place.cats.length ? place.cats.slice(0, 3) : [""];
+  const overlap = Math.round(size * 0.4);   // 40% overlap
+  const totalW  = size + (cats.length - 1) * (size - overlap);
 
   const circles = cats.map((c, i) => {
-    const color = catStyle(c).color;
-    const border = isActive ? `border:1px solid #434343` : `border:1px solid #fff`;
-    const ml = i > 0 ? `margin-left:${gap}px` : "";
-    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};${border};box-shadow:0 1px 4px rgba(0,0,0,.18);flex-shrink:0;display:inline-block;${ml}"></div>`;
+    const color  = catStyle(c).color;
+    const border = isActive ? `border:2px solid #fff` : `border:2px solid #fff`;
+    const left   = i * (size - overlap);
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};${border};box-shadow:0 1px 4px rgba(0,0,0,.18);position:absolute;left:${left}px;top:0"></div>`;
   }).join("");
 
   return L.divIcon({
-    html: `<div style="display:flex;align-items:center;width:${totalW}px;height:${size}px;overflow:visible">${circles}</div>`,
+    html: `<div style="position:relative;width:${totalW}px;height:${size}px">${circles}</div>`,
     className: "",
     iconSize:    [totalW, size],
     iconAnchor:  [totalW / 2, size / 2],
@@ -1856,7 +1856,7 @@ function buildMobileFilters() {
     const btn = document.createElement("button");
     btn.className = "mobile-chip";
     // Always show colored bg + white text (like desktop); active = dark border highlight
-    btn.style.cssText = `background:${s.color};color:#fff;border:none;opacity:${isActive ? "1" : "0.82"}`;
+    btn.style.cssText = `background:${s.color};color:#fff;border:1.5px solid ${isActive ? "#1a1a1a" : "transparent"};opacity:${isActive ? "1" : "0.82"}`;
     btn.innerHTML = `${s.emoji} ${catLabel(c)}`;
     btn.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
