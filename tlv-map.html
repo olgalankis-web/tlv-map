@@ -1784,6 +1784,19 @@ function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("closed");
 }
 
+// Swipe-down to close sidebar on mobile
+(function() {
+  const sidebar = document.getElementById("sidebar");
+  let startY = 0;
+  sidebar.addEventListener("touchstart", e => {
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  sidebar.addEventListener("touchend", e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 50) sidebar.classList.add("closed");
+  }, { passive: true });
+})();
+
 /* ═══════════════════════════════════════════════════
    SEARCH
    ═══════════════════════════════════════════════════ */
