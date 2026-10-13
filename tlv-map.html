@@ -733,9 +733,6 @@
         font-size: 13px; font-weight: 600; gap: 6px;
       }
 
-      /* ── Map starts below the 3-row header (no overlap) ── */
-      #map { top: 152px !important; }
-
       /* ── Attribution: tiny ── */
       .leaflet-control-attribution {
         font-size: 8px !important;
@@ -1504,6 +1501,10 @@ function selectPlace(idx, filtered, fromList = true) {
 
   markers[idx].openPopup();
   map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
+  if (isMobile) {
+    // Push marker down so popup clears the 3-row header (~150px)
+    setTimeout(() => map.panBy([0, -110], { animate: true }), 350);
+  }
 
   if (!fromList) return; // map tap: skip list highlighting
   document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
