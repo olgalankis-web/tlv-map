@@ -641,7 +641,7 @@
       height: 33px;
       padding: 0 13px;
       border-radius: 50px;
-      border: 1.5px solid var(--border);
+      border: none;
       background: var(--surface);
       font-family: 'Assistant', sans-serif;
       font-size: 13px;
@@ -1724,7 +1724,7 @@ function buildMobileFilters() {
     const btn = document.createElement("button");
     btn.className = "mobile-chip";
     // Always show colored bg + white text (like desktop); active = dark border highlight
-    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:1px`;
+    btn.style.cssText = `background:${s.color};color:#fff;border:none;opacity:${isActive ? "1" : "0.82"}`;
     btn.innerHTML = `${s.emoji} ${catLabel(c)}`;
     btn.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
