@@ -1631,7 +1631,7 @@ async function geocodeBatch(pending) {
    ═══════════════════════════════════════════════════ */
 function processPlaceRows(rows) {
   // DEBUG — log exact category strings from Sheet
-  const debugCats = [...new Set(rows.flatMap(cols => [1,2,3].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
+  const debugCats = [...new Set(rows.flatMap(cols => [2,3,4].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
   console.log("📋 קטגוריות מהשיט:", JSON.stringify(debugCats));
 
   const ready = [], toGeocode = [];
@@ -1640,17 +1640,17 @@ function processPlaceRows(rows) {
     if (!name) continue;
     const base = {
       name,
-      cats:           [cols[1], cols[2], cols[3]].map(c => (c||"").trim()).filter(Boolean),
-      area:           (cols[4] || "").trim() || "כללי",
-      // col 5 = מיקום, col 6 = כתובת, col 7 = אינסטגרם, col 8 = פתוח בשבת, col 9 = הערות, col 10 = שם באנגלית, col 11 = הערות באנגלית
-      displayAddress: (cols[6] || "").trim() || "",
-      instagram:      (cols[7] || "").trim() || "",
-      shabbat:        (cols[8] || "").trim() || "",
-      notes:          (cols[9] || "").trim() || "",
-      nameEn:         (cols[10] || "").trim() || "",
+      // col 1 = שם באנגלית, col 2,3,4 = קטגוריות, col 5 = אזור, col 6 = מיקום, col 7 = כתובת, col 8 = אינסטגרם, col 9 = שבת, col 10 = הערות, col 11 = הערות באנגלית
+      nameEn:         (cols[1] || "").trim() || "",
+      cats:           [cols[2], cols[3], cols[4]].map(c => (c||"").trim()).filter(Boolean),
+      area:           (cols[5] || "").trim() || "כללי",
+      displayAddress: (cols[7] || "").trim() || "",
+      instagram:      (cols[8] || "").trim() || "",
+      shabbat:        (cols[9] || "").trim() || "",
+      notes:          (cols[10] || "").trim() || "",
       notesEn:        (cols[11] || "").trim() || "",
     };
-    const locField = (cols[5] || "").trim();
+    const locField = (cols[6] || "").trim();
     if (isLatLng(locField)) {
       const [lat, lng] = locField.split(",").map(s => parseFloat(s.trim()));
       if (!isNaN(lat) && !isNaN(lng)) { ready.push({ ...base, lat, lng }); continue; }
