@@ -605,49 +605,48 @@
        ════════════════════════════════════════ */
     @media (max-width: 640px) {
 
-      /* ── Row 1: logo + EN + collection — all same height 36px ── */
+      /* ── Row 1: logo + spacer + EN + collection — uniform height ── */
       .topbar {
         top: 8px; right: 8px; left: 8px;
-        gap: 6px; flex-wrap: wrap; align-items: stretch;
+        gap: 6px; flex-wrap: wrap; align-items: center;
       }
       .topbar-logo-pill {
-        order: 1; padding: 0 12px; height: 36px;
-        align-items: center; display: flex;
+        order: 1; padding: 7px 12px; flex-shrink: 0;
       }
       .logo-text { font-size: 13px; }
+      .topbar-spacer { order: 2; flex: 1; min-width: 0; }
       .lang-toggle {
-        order: 3; padding: 0 12px; height: 36px; line-height: 36px;
+        order: 3; padding: 7px 12px;
         font-size: 13px !important; flex-shrink: 0;
-        display: flex; align-items: center;
       }
       .collection-pill {
-        order: 4; padding: 0 10px; height: 36px;
-        font-size: 13px !important;
-        display: flex; align-items: center;
+        order: 4; padding: 7px 10px;
+        font-size: 13px !important; flex-shrink: 0;
       }
-      #btnAbout         { display: none !important; }
-      .topbar-spacer    { order: 2; flex: 1; display: block; }
+      #btnAbout { display: none !important; }
 
-      /* ── Row 2: filter chips — Google Maps style ── */
+      /* ── Row 2: filter chips — full row, scrollable ── */
       .filter-pills {
-        order: 10; width: 100%;
+        order: 10;
+        flex-basis: 100%;   /* forces new row */
+        width: 100%;
         flex-wrap: nowrap;
         overflow-x: auto; -webkit-overflow-scrolling: touch;
         scrollbar-width: none; padding: 2px 0 4px;
         gap: 7px;
       }
       .filter-pills::-webkit-scrollbar { display: none; }
-      /* Hide search icon & bar — not critical on mobile */
+      /* Hide search — not critical on mobile */
       #btnSearch, .search-bar { display: none !important; }
-      /* Filter pill: Google Maps chip style */
+      /* Chips: Google Maps style — clear, tappable */
       .filter-pill {
         flex-shrink: 0;
-        height: 34px; padding: 0 14px;
+        height: 36px; padding: 0 15px;
         font-size: 14px !important;
         border-radius: 50px;
         border: 1.5px solid var(--border);
         background: var(--surface);
-        box-shadow: 0 1px 4px rgba(0,0,0,.10);
+        box-shadow: 0 1px 6px rgba(0,0,0,.12);
       }
       .filter-pill.has-active {
         background: #1a1a1a; color: #fff; border-color: #1a1a1a;
@@ -1422,7 +1421,7 @@ function renderMarkers(filtered) {
     const m = L.marker([p.lat, p.lng], { icon: getIcon(p, i === activeId) })
       .addTo(map)
       .bindPopup(popupHTML(p), { maxWidth: 280 });
-    m.on("click", () => selectPlace(i, filtered));
+    m.on("click", () => selectPlace(i, filtered, false));
     markers[i] = m;
   });
 }
@@ -1436,7 +1435,7 @@ function deselectPlace(filtered) {
   document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
 }
 
-function selectPlace(idx, filtered) {
+function selectPlace(idx, filtered, fromList = true) {
   if (activeId === idx) {
     deselectPlace(filtered);
     markers[idx].closePopup();
@@ -1445,23 +1444,21 @@ function selectPlace(idx, filtered) {
   activeId = idx;
   const p = filtered[idx];
   Object.entries(markers).forEach(([i, m]) => m.setIcon(getIcon(filtered[Number(i)], Number(i) === idx)));
-  // On mobile: close sidebar so map+popup are fully visible
+
   const isMobile = window.innerWidth <= 640;
-  if (isMobile) {
+
+  // On mobile map-tap: close sidebar, open popup, no list scroll
+  if (isMobile && !fromList) {
     document.getElementById("sidebar").classList.add("closed");
+    markers[idx].openPopup();
+    map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
+    setTimeout(() => map.panBy([0, 80], { animate: false }), 350);
+    return; // don't highlight list card
   }
+
+  // Desktop or list-tap: normal behavior
   markers[idx].openPopup();
-  // Pan map: on mobile offset upward so popup shows above the fold
-  const zoom = Math.max(map.getZoom(), 15);
-  if (isMobile) {
-    map.setView([p.lat, p.lng], zoom, { animate: true });
-    // After pan, shift map down slightly so popup appears in upper half
-    setTimeout(() => {
-      map.panBy([0, 80], { animate: true, duration: 0.3 });
-    }, 350);
-  } else {
-    map.setView([p.lat, p.lng], zoom, { animate: true });
-  }
+  map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
   document.querySelectorAll(".place-card").forEach(el => el.classList.remove("active"));
   const card = document.getElementById(`card-${idx}`);
   if (card) { card.classList.add("active"); card.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
@@ -1518,7 +1515,7 @@ function renderList(filtered) {
       const removeBtn = collectionMode
         ? `<button onclick="event.stopPropagation();toggleSavePlace('${safeName}',null)" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .15s" onmouseover="this.style.color='#555'" onmouseout="this.style.color='#aaa'" title="${t('remove_title')}">✕</button>`
         : "";
-      return `<div class="place-card" id="card-${i}" onclick="selectPlace(${i}, filteredPlaces)" style="display:flex;align-items:center;gap:4px">
+      return `<div class="place-card" id="card-${i}" onclick="selectPlace(${i}, filteredPlaces, true)" style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;min-width:0">
           <div class="place-card-name">${(lang === "en" && p.nameEn) ? p.nameEn : p.name}</div>
           <div class="place-card-area">${areaLabel(p.area)}</div>
