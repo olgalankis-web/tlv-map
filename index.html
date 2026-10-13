@@ -1493,7 +1493,7 @@ function getIcon(place, isActive = false) {
 
   const circles = cats.map((c, i) => {
     const color  = catStyle(c).color;
-    const border = isActive ? `border:2px solid #fff` : `border:2px solid #fff`;
+    const border = `border:1px solid #fff`;
     const left   = i * (size - overlap);
     return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};${border};box-shadow:0 1px 4px rgba(0,0,0,.18);position:absolute;left:${left}px;top:0"></div>`;
   }).join("");
