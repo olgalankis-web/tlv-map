@@ -1818,8 +1818,7 @@ function buildFilters() {
     const isActive = activeCats.has(c);
     const chip = document.createElement("button");
     chip.className = "chip";
-    chip.style.cssText = `background:${s.color};color:#fff;border:none;opacity:${isActive ? "1" : "0.75"}`;
-    if (isActive) chip.style.boxShadow = `0 0 0 2.5px ${s.color}, 0 0 0 4px #fff`;
+    chip.style.cssText = `background:${s.color};color:#fff;border:1px solid ${isActive ? "#434343" : "transparent"}`;
     chip.innerHTML = `${s.emoji} ${catLabel(c)}`;
     chip.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
