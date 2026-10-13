@@ -1102,6 +1102,7 @@ function loadSettings() {
         return rows;
       }
       const allRows = parseFullCSV(text.trim()).slice(1); // skip header
+      console.log("⚙️ settings rows:", allRows.length, "| types:", allRows.map(r => r[0]).join(","));
       allRows.forEach(parts => {
         parts = parts.map(pc);
         const [type, he, en] = parts;
