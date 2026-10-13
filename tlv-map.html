@@ -1633,6 +1633,7 @@ function processPlaceRows(rows) {
   // DEBUG — log exact category strings from Sheet
   const debugCats = [...new Set(rows.flatMap(cols => [2,3,4].map(i => (cols[i]||"").trim()).filter(Boolean)))].sort();
   console.log("📋 קטגוריות מהשיט:", JSON.stringify(debugCats));
+  if (rows[0]) console.log("🔍 שורה ראשונה (12 עמודות):", JSON.stringify(rows[0].slice(0,12)));
 
   const ready = [], toGeocode = [];
   for (const cols of rows) {
