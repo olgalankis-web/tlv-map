@@ -604,7 +604,7 @@
 
   <!-- Logo -->
   <div class="topbar-logo-pill">
-    <div class="logo-text">אוסף: <span>תל אביב</span></div>
+    <div class="logo-text" id="logoTitle">אוסף: <span>תל אביב</span></div>
   </div>
 
   <!-- Filters -->
@@ -851,13 +851,70 @@ const TRANSLATIONS = {
   }
 };
 
+/* Settings sheet translations — loaded dynamically */
+let settingsTranslations = {};  // Hebrew → English for categories, areas, UI strings
+let aboutFromSettings = { title: "", titleEn: "", body: "", bodyEn: "", url: "" };
+
+function loadSettings() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("הגדרות")}`;
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error("settings fetch failed"); return r.text(); })
+    .then(text => {
+      const pc = s => s.trim().replace(/^"|"$/g, "").replace(/""/g, '"');
+      const lines = text.trim().split(/\r?\n/).slice(1); // skip header
+      lines.forEach(line => {
+        const parts = parseCSVRow(line).map(pc);
+        const [type, he, en] = parts;
+        if (!type) return;
+        if (type === "cat" || type === "area" || type === "ui") {
+          if (he) settingsTranslations[he] = en || he;
+        } else if (type === "about_title") {
+          aboutFromSettings.title = he; aboutFromSettings.titleEn = en;
+        } else if (type === "about_body") {
+          aboutFromSettings.body = he; aboutFromSettings.bodyEn = en;
+        } else if (type === "about_url") {
+          aboutFromSettings.url = he;
+        }
+      });
+      // Update about popup
+      if (aboutFromSettings.title) {
+        const isEn = lang === "en";
+        document.getElementById("aboutModalTitle").textContent =
+          isEn ? (aboutFromSettings.titleEn || aboutFromSettings.title) : aboutFromSettings.title;
+        if (aboutFromSettings.body)
+          document.getElementById("aboutModalBody").innerHTML =
+            (isEn ? (aboutFromSettings.bodyEn || aboutFromSettings.body) : aboutFromSettings.body).replace(/\\n/g, "<br>");
+        if (aboutFromSettings.url) aboutCoffeeUrl = aboutFromSettings.url;
+      }
+      // Rebuild UI with new translations
+      if (lang === "en") { buildFilters(); applyFilters(); updateLogoTitle(); }
+    })
+    .catch(e => console.warn("Settings fetch failed:", e));
+}
+
+function updateLogoTitle() {
+  const logoEl = document.getElementById("logoTitle");
+  if (!logoEl) return;
+  if (lang === "en" && settingsTranslations["אוסף: תל אביב"]) {
+    const parts = settingsTranslations["אוסף: תל אביב"].split(":");
+    logoEl.innerHTML = `${parts[0].trim()}: <span>${(parts[1] || "").trim()}</span>`;
+  } else {
+    logoEl.innerHTML = `אוסף: <span>תל אביב</span>`;
+  }
+}
+
+function areaLabel(area) {
+  if (lang === "en") return settingsTranslations[area] || area;
+  return area;
+}
+
 function t(key, arg) {
   const val = (TRANSLATIONS[lang] || TRANSLATIONS.he)[key] || TRANSLATIONS.he[key] || key;
   return typeof val === "function" ? val(arg) : val;
 }
 
 function catLabel(cat) {
-  if (lang === "en") { const s = catStyle(cat); return s.en || cat; }
+  if (lang === "en") return settingsTranslations[cat] || (catStyle(cat).en) || cat;
   return cat;
 }
 
@@ -882,6 +939,18 @@ function applyTranslations() {
   const btn = document.getElementById("btnLang");
   btn.textContent = lang === "he" ? "EN" : "עב";
   btn.classList.toggle("active", lang === "en");
+
+  updateLogoTitle();
+
+  // Update about popup language
+  if (aboutFromSettings.title) {
+    const isEn = lang === "en";
+    document.getElementById("aboutModalTitle").textContent =
+      isEn ? (aboutFromSettings.titleEn || aboutFromSettings.title) : aboutFromSettings.title;
+    if (aboutFromSettings.body)
+      document.getElementById("aboutModalBody").innerHTML =
+        (isEn ? (aboutFromSettings.bodyEn || aboutFromSettings.body) : aboutFromSettings.body).replace(/\\n/g, "<br>");
+  }
 
   buildFilters();
   applyFilters();
@@ -1186,16 +1255,18 @@ function popupHTML(p) {
       </a>`
     : "";
 
-  const notesHTML = p.notes
-    ? `<div class="popup-notes-row">${p.notes}</div>` : "";
+  const displayName  = (lang === "en" && p.nameEn)  ? p.nameEn  : p.name;
+  const displayNotes = (lang === "en" && p.notesEn) ? p.notesEn : p.notes;
+  const notesHTML = displayNotes
+    ? `<div class="popup-notes-row">${displayNotes}</div>` : "";
 
   const isSaved = savedNames.has(p.name);
   const safeName = p.name.replace(/'/g, "\\'");
   const saveBtn = `<button class="popup-save-heart${isSaved ? ' saved' : ''}" id="popupSaveBtn" onclick="toggleSavePlace('${safeName}', this)" title="${isSaved ? t('remove_title') : t('save_title')}">🩷</button>`;
 
   return `<div class="popup-inner">
-    <div class="popup-name">${p.name}</div>
-    <div class="popup-area">${p.area}</div>
+    <div class="popup-name">${displayName}</div>
+    <div class="popup-area">${areaLabel(p.area)}</div>
     ${addressHTML}
     <div class="popup-tags">${tags}</div>
     ${notesHTML}
@@ -1296,8 +1367,8 @@ function renderList(filtered) {
         : "";
       return `<div class="place-card" id="card-${i}" onclick="selectPlace(${i}, filteredPlaces)" style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;min-width:0">
-          <div class="place-card-name">${p.name}</div>
-          <div class="place-card-area">${p.area}</div>
+          <div class="place-card-name">${(lang === "en" && p.nameEn) ? p.nameEn : p.name}</div>
+          <div class="place-card-area">${areaLabel(p.area)}</div>
           ${extraTags ? `<div class="place-card-tags">${extraTags}</div>` : ""}
         </div>
         ${removeBtn}
@@ -1348,7 +1419,7 @@ function buildFilters() {
     const chip = document.createElement("button");
     chip.className = "chip" + (activeAreas.has(a) ? " active" : "");
     chip.style.cssText = activeAreas.has(a) ? "background:#434343;border-color:#434343;color:#fff" : "";
-    chip.textContent = a;
+    chip.textContent = areaLabel(a);
     chip.onclick = () => {
       activeAreas.has(a) ? activeAreas.delete(a) : activeAreas.add(a);
       buildFilters();
@@ -1571,11 +1642,13 @@ function processPlaceRows(rows) {
       name,
       cats:           [cols[1], cols[2], cols[3]].map(c => (c||"").trim()).filter(Boolean),
       area:           (cols[4] || "").trim() || "כללי",
-      // col 5 = מיקום, col 6 = כתובת, col 7 = אינסטגרם, col 8 = פתוח בשבת, col 9 = הערות
+      // col 5 = מיקום, col 6 = כתובת, col 7 = אינסטגרם, col 8 = פתוח בשבת, col 9 = הערות, col 10 = שם באנגלית, col 11 = הערות באנגלית
       displayAddress: (cols[6] || "").trim() || "",
       instagram:      (cols[7] || "").trim() || "",
       shabbat:        (cols[8] || "").trim() || "",
       notes:          (cols[9] || "").trim() || "",
+      nameEn:         (cols[10] || "").trim() || "",
+      notesEn:        (cols[11] || "").trim() || "",
     };
     const locField = (cols[5] || "").trim();
     if (isLatLng(locField)) {
@@ -1618,7 +1691,7 @@ function onSheetData(gviz) {
   const rows = gviz.table.rows || [];
   if (!rows.length) return;
   const cell = (row, i) => (row.c && row.c[i] && row.c[i].v != null) ? String(row.c[i].v).trim() : "";
-  processPlaceRows(rows.map(row => [0,1,2,3,4,5,6,7].map(i => cell(row, i))));
+  processPlaceRows(rows.map(row => [0,1,2,3,4,5,6,7,8,9,10,11].map(i => cell(row, i))));
 }
 
 window["google"] = window["google"] || {};
@@ -1627,7 +1700,7 @@ window["google"]["visualization"]["Query"] = { setResponse: onSheetData };
 
 function loadFromSheets() {
   PLACES = Object.entries(FALLBACK_COORDS).map(([name, [lat, lng]]) => ({
-    name, cats: [], area: "כללי", lat: parseFloat(lat), lng: parseFloat(lng), displayAddress: "", instagram: "", shabbat: "", notes: "",
+    name, cats: [], area: "כללי", lat: parseFloat(lat), lng: parseFloat(lng), displayAddress: "", instagram: "", shabbat: "", notes: "", nameEn: "", notesEn: "",
   }));
   buildFilters();
   applyFilters();
@@ -1648,7 +1721,7 @@ function loadFromSheets() {
    INIT
    ═══════════════════════════════════════════════════ */
 loadFromSheets();
-loadAboutContent();
+loadSettings();
 updateCollectionBtn();
 if (lang === "en") applyTranslations();
 
