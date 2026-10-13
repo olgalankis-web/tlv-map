@@ -1110,6 +1110,7 @@ function loadSettings() {
           if (he) settingsTranslations[he] = en || he;
         } else if (type === "empty_collection") {
           emptyCollectionMsg.he = he; emptyCollectionMsg.en = en || he;
+          console.log("📋 empty_collection he:", JSON.stringify(he));
         } else if (type === "about_title") {
           aboutFromSettings.title = he; aboutFromSettings.titleEn = en;
         } else if (type === "about_body") {
