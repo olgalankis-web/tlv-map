@@ -98,6 +98,8 @@
       flex-shrink: 0;
     }
 
+    .mobile-only-btn { display: none; }
+
     .filter-pills {
       display: flex;
       gap: 6px;
@@ -691,6 +693,8 @@
       .topbar-spacer { flex: 1; display: block; }
       /* Hide desktop filter pills on mobile */
       .filter-pills { display: none !important; }
+      /* Show mobile-only buttons */
+      .mobile-only-btn { display: flex !important; }
 
       /* All topbar row-1 buttons: same height + font */
       .lang-toggle,
@@ -841,6 +845,12 @@
       <button class="search-bar-clear" onclick="clearSearch()">✕</button>
     </div>
   </div>
+
+  <!-- Search + More (mobile only — duplicates of the desktop ones inside filter-pills) -->
+  <button class="filter-pill mobile-only-btn" id="btnSearchMobile" onclick="toggleSearch()" title="חיפוש">🔍</button>
+  <button class="filter-pill mobile-only-btn" id="btnMoreMobile" onclick="toggleDropdown('morePanel','btnMoreMobile')">
+    <span style="font-size:16px;letter-spacing:2px">···</span>
+  </button>
 
   <!-- Language toggle -->
   <button class="lang-toggle" id="btnLang" onclick="toggleLanguage()">EN</button>
