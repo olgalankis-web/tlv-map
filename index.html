@@ -1429,6 +1429,20 @@ function toggleCollection() {
   collectionMode = !collectionMode;
   updateCollectionBtn();
   applyFilters();
+
+  // Fit map to saved places when entering collection mode
+  if (collectionMode && savedNames.size > 0) {
+    const pts = PLACES.filter(p => savedNames.has(p.name) && p.lat && p.lng)
+                      .map(p => [p.lat, p.lng]);
+    if (pts.length > 0) {
+      map.fitBounds(L.latLngBounds(pts), { padding: [60, 60], animate: true, maxZoom: 16 });
+    }
+  }
+
+  // On mobile, open sidebar when entering collection mode
+  if (collectionMode && window.innerWidth <= 640) {
+    document.getElementById("sidebar").classList.remove("closed");
+  }
 }
 
 function buildRoute() {
