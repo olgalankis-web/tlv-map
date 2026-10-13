@@ -1502,17 +1502,19 @@ function selectPlace(idx, filtered, fromList = true) {
   markers[idx].openPopup();
   map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true });
   if (isMobile) {
-    // After popup renders, measure its position and pan so it clears the header
-    setTimeout(() => {
-      const popupEl = document.querySelector('.leaflet-popup');
-      if (popupEl) {
-        const headerH = 155;
-        const top = popupEl.getBoundingClientRect().top;
-        if (top < headerH) {
-          map.panBy([0, -(headerH - top + 12)], { animate: true });
+    // Wait for map to finish moving, then pan popup below the 3-row header
+    map.once('moveend', () => {
+      setTimeout(() => {
+        const popupEl = document.querySelector('.leaflet-popup');
+        if (popupEl) {
+          const headerH = 165;
+          const top = popupEl.getBoundingClientRect().top;
+          if (top < headerH) {
+            map.panBy([0, -(headerH - top + 16)], { animate: true });
+          }
         }
-      }
-    }, 450);
+      }, 60);
+    });
   }
 
   if (!fromList) return; // map tap: skip list highlighting
