@@ -107,6 +107,7 @@
     }
 
     .mobile-only-btn { display: none; }
+    .desktop-only-btn { display: inline-flex; }
 
     /* Mobile search floating button */
     #mobileSearchBtn {
@@ -723,6 +724,7 @@
       .filter-pills { display: none !important; }
       /* Show mobile-only buttons */
       .mobile-only-btn { display: flex !important; }
+      .desktop-only-btn { display: none !important; }
 
       /* Mobile search floating btn */
       #mobileSearchBtn { display: flex !important; }
@@ -913,7 +915,7 @@
     <button class="filter-pill" id="btnShabbat" onclick="toggleShabbat()" style="display:none">
       <span id="shabbatBtnText">פתוח בשבת</span>
     </button>
-    <button class="filter-pill" id="btnMore" onclick="toggleDropdown('morePanel','btnMore')">
+    <button class="filter-pill desktop-only-btn" id="btnMore" onclick="toggleDropdown('morePanel','btnMore')">
       <span style="font-size:16px;letter-spacing:2px">···</span>
     </button>
     <button class="filter-pill" id="btnSearch" onclick="toggleSearch()" title="חיפוש">🔍</button>
