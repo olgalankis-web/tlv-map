@@ -100,6 +100,26 @@
 
     .mobile-only-btn { display: none; }
 
+    /* Mobile search floating button */
+    #mobileSearchBtn {
+      display: none;
+      position: absolute;
+      bottom: 86px;
+      left: 14px;
+      z-index: 1000;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      display: none;
+      align-items: center; justify-content: center;
+    }
+
     .filter-pills {
       display: flex;
       gap: 6px;
@@ -696,6 +716,27 @@
       /* Show mobile-only buttons */
       .mobile-only-btn { display: flex !important; }
 
+      /* Mobile search floating btn */
+      #mobileSearchBtn { display: flex !important; }
+
+      /* Uniform size for all topbar row-1 items */
+      .topbar-logo-pill,
+      .mobile-only-btn,
+      .lang-toggle,
+      #btnCollection,
+      #btnAbout {
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 0 10px !important;
+        font-size: 14px !important;
+      }
+      /* ··· active state */
+      #btnMoreMobile.more-active {
+        background: #1a1a1a !important;
+        color: #fff !important;
+      }
+      #btnMoreMobile.more-active #btnMoreMobileDots { color: #fff; }
+
       /* All topbar row-1 buttons: same height + font */
       .lang-toggle,
       #btnCollection,
@@ -846,10 +887,9 @@
     </div>
   </div>
 
-  <!-- Search + More (mobile only — duplicates of the desktop ones inside filter-pills) -->
-  <button class="filter-pill mobile-only-btn" id="btnSearchMobile" onclick="toggleSearch()" title="חיפוש">🔍</button>
+  <!-- More (mobile only) -->
   <button class="filter-pill mobile-only-btn" id="btnMoreMobile" onclick="toggleDropdown('morePanel','btnMoreMobile')">
-    <span style="font-size:16px;letter-spacing:2px">···</span>
+    <span id="btnMoreMobileDots" style="font-size:16px;letter-spacing:2px">···</span>
   </button>
 
   <!-- Language toggle -->
@@ -938,6 +978,9 @@
   </svg>
   <span class="sidebar-open-label" id="sidebarOpenLabel">רשימה</span>
 </button>
+
+<!-- Mobile search button (bottom-left of map) -->
+<button id="mobileSearchBtn" onclick="toggleSearch()" title="חיפוש">🔍</button>
 
 <!-- Toast -->
 <div id="toast"></div>
@@ -1746,6 +1789,9 @@ function buildFilters() {
 function updateFilterBtnState() {
   document.getElementById("btnCat").classList.toggle("has-active", activeCats.size > 0);
   document.getElementById("btnArea").classList.toggle("has-active", activeAreas.size > 0);
+  const moreActive = shabbatFilter;
+  const moreBtn = document.getElementById("btnMoreMobile");
+  if (moreBtn) moreBtn.classList.toggle("more-active", moreActive);
 }
 
 /* ─── Mobile inline filter bars ─────────────────── */
@@ -1898,6 +1944,7 @@ function toggleShabbat() {
     moreBtn.style.borderColor  = shabbatFilter ? "var(--accent)" : "var(--border)";
     moreBtn.style.background   = shabbatFilter ? "#e8f4f8"       : "var(--bg)";
   }
+  updateFilterBtnState();
   applyFilters();
 }
 
