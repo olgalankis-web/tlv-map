@@ -619,13 +619,13 @@
     /* ════════════════════════════════════════
        MOBILE FILTER BARS (hidden on desktop)
        ════════════════════════════════════════ */
+    #mobileHeaderBg { display: none; }
+
     .mobile-filter-bar {
       display: none;
       position: absolute;
       left: 0; right: 0;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      background: rgba(255,255,255,0.62);
+      background: transparent;
       z-index: 999;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -661,6 +661,20 @@
        MOBILE  (≤ 640px)
        ════════════════════════════════════════ */
     @media (max-width: 640px) {
+      /* Unified frosted-glass header background */
+      #mobileHeaderBg {
+        display: block;
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 158px; /* 3 rows + buffer */
+        z-index: 999;
+        pointer-events: none;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        background: rgba(255,255,255,0.48);
+        -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+      }
 
       /* ── Row 1: logo + spacer + lang + collection (icon) + about (icon) ── */
       .topbar {
@@ -837,6 +851,9 @@
   </button>
 
 </div>
+
+<!-- Mobile header blur background (covers all 3 rows + buffer) -->
+<div id="mobileHeaderBg"></div>
 
 <!-- Mobile filter rows (cats + areas inline, visible only on mobile) -->
 <div id="mobileCatBar" class="mobile-filter-bar"></div>
@@ -1708,7 +1725,7 @@ function buildMobileFilters() {
     const btn = document.createElement("button");
     btn.className = "mobile-chip";
     // Always show colored bg + white text (like desktop); active = dark border highlight
-    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:${isActive ? "1.5px" : "1.5px"};outline:${isActive ? "1.5px solid #1a1a1a" : "none"};outline-offset:1px`;
+    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:1px`;
     btn.innerHTML = `${s.emoji} ${catLabel(c)}`;
     btn.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
