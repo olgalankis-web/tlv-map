@@ -64,9 +64,12 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      background: transparent;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 50px;
       padding: 9px 16px;
+      box-shadow: var(--shadow);
       flex-shrink: 0;
     }
     .logo-text {
@@ -620,9 +623,9 @@
       display: none;
       position: absolute;
       left: 0; right: 0;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255,255,255,0.62);
       z-index: 999;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -1328,6 +1331,13 @@ L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_L
 // Zoom control: desktop only
 if (window.innerWidth > 640) L.control.zoom({ position: "bottomleft" }).addTo(map);
 
+// Close sidebar on empty map click (mobile)
+map.on('click', function() {
+  if (window.innerWidth <= 640) {
+    document.getElementById('sidebar').classList.add('closed');
+  }
+});
+
 /* ═══════════════════════════════════════════════════
    MARKER FACTORY
    ═══════════════════════════════════════════════════ */
@@ -1698,7 +1708,7 @@ function buildMobileFilters() {
     const btn = document.createElement("button");
     btn.className = "mobile-chip";
     // Always show colored bg + white text (like desktop); active = dark border highlight
-    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:${isActive ? "2.5px" : "1.5px"}`;
+    btn.style.cssText = `background:${s.color};color:#fff;border-color:${isActive ? "#1a1a1a" : "transparent"};border-width:${isActive ? "1.5px" : "1.5px"};outline:${isActive ? "1.5px solid #1a1a1a" : "none"};outline-offset:1px`;
     btn.innerHTML = `${s.emoji} ${catLabel(c)}`;
     btn.onclick = () => {
       activeCats.has(c) ? activeCats.delete(c) : activeCats.add(c);
