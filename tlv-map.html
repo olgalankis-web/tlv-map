@@ -591,7 +591,8 @@
       flex-shrink: 0;
     }
     .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    .lang-toggle.active { background: rgba(255,255,255,0.72); color: #1a1a1a; border-color: var(--border); }
+    .lang-toggle.active,
+    .lang-toggle:not(.active) { background: rgba(255,255,255,0.72) !important; color: #1a1a1a !important; border-color: var(--border) !important; }
 
     /* ─── Sidebar open label (mobile only) ─── */
     .sidebar-open-label { display: none; }
@@ -1793,7 +1794,7 @@ function toggleSidebar() {
   }, { passive: true });
   sidebar.addEventListener("touchend", e => {
     const dy = e.changedTouches[0].clientY - startY;
-    if (dy > 50) sidebar.classList.add("closed");
+    if (dy > 30) sidebar.classList.add("closed");
   }, { passive: true });
 })();
 
