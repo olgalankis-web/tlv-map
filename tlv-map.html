@@ -503,7 +503,11 @@
       z-index: 9999;
       transition: transform .3s ease;
       pointer-events: none;
-      white-space: nowrap;
+      white-space: pre-line;
+      max-width: min(88vw, 340px);
+      text-align: center;
+      border-radius: 18px;
+      line-height: 1.5;
     }
     #toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -1912,7 +1916,7 @@ function locateMe() {
    ═══════════════════════════════════════════════════ */
 function showToast(msg) {
   const t = document.getElementById("toast");
-  t.textContent = msg;
+  t.textContent = msg.replace(/\\n/g, "\n");
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2800);
 }
