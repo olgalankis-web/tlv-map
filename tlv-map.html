@@ -58,19 +58,18 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      background: var(--surface);
+      background: transparent;
       border-radius: 50px;
       padding: 9px 16px;
-      box-shadow: var(--shadow);
       flex-shrink: 0;
     }
     .logo-text {
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       white-space: nowrap;
-      color: var(--text);
+      color: #1a1a1a;
     }
-    .logo-text span { color: var(--accent); }
+    .logo-text span { color: #1a1a1a; }
     .search-input {
       border: none;
       outline: none;
@@ -125,7 +124,9 @@
     }
 
     .locate-pill {
-      background: var(--surface);
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border: none;
       border-radius: 50px;
       padding: 9px 14px;
@@ -139,7 +140,9 @@
 
     /* ─── Collection button ─── */
     .collection-pill {
-      background: var(--surface);
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border: none;
       border-radius: 50px;
       padding: 9px 14px;
@@ -558,7 +561,9 @@
     .dropdown-backdrop.open { display: block; }
     /* ─── Language toggle ─── */
     .lang-toggle {
-      background: var(--surface);
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border: 1.5px solid var(--border);
       border-radius: 50px;
       padding: 8px 14px;
@@ -607,6 +612,9 @@
       display: none;
       position: absolute;
       left: 0; right: 0;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.55);
       z-index: 999;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -735,8 +743,8 @@
 
       /* ── Attribution: tiny ── */
       .leaflet-control-attribution {
-        font-size: 8px !important;
-        padding: 2px 5px !important;
+        font-size: 4px !important;
+        padding: 1px 3px !important;
       }
 
       /* ── Popup ── */
@@ -746,7 +754,7 @@
     }
 
     /* Attribution small on desktop too */
-    .leaflet-control-attribution { font-size: 9px; }
+    .leaflet-control-attribution { font-size: 7px; }
 
     /* ─── Global font size bump (+1px) ─── */
     .search-input       { font-size: 15px !important; }
