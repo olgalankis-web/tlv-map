@@ -112,6 +112,7 @@
     .mobile-only-btn { display: none !important; }
     #btnMoreMobile { display: none !important; }
     .desktop-only-btn { display: inline-flex; }
+    #btnMore.more-active { background: #1a1a1a !important; color: #fff !important; }
 
     /* Mobile search floating button */
     #mobileSearchBtn {
@@ -1848,8 +1849,10 @@ function updateFilterBtnState() {
   document.getElementById("btnCat").classList.toggle("has-active", activeCats.size > 0);
   document.getElementById("btnArea").classList.toggle("has-active", activeAreas.size > 0);
   const moreActive = shabbatFilter;
-  const moreBtn = document.getElementById("btnMoreMobile");
-  if (moreBtn) moreBtn.classList.toggle("more-active", moreActive);
+  ["btnMoreMobile", "btnMore"].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle("more-active", moreActive);
+  });
 }
 
 /* ─── Mobile inline filter bars ─────────────────── */
