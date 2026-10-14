@@ -924,10 +924,10 @@
       <span style="font-size:16px;letter-spacing:2px">···</span>
     </button>
     <button class="filter-pill" id="btnSearch" onclick="toggleSearch()" title="חיפוש">🔍</button>
-  </div>
-  <div class="search-bar" id="searchBar">
-    <input id="searchInput" placeholder="חיפוש..." />
-    <button class="search-bar-clear" onclick="clearSearch()">✕</button>
+    <div class="search-bar" id="searchBar">
+      <input id="searchInput" placeholder="חיפוש..." />
+      <button class="search-bar-clear" onclick="clearSearch()">✕</button>
+    </div>
   </div>
 
   <!-- More (mobile only) -->
@@ -1950,16 +1950,23 @@ function toggleSearch() {
   const bar    = document.getElementById("searchBar");
   const btn    = document.getElementById("btnSearch");
   const isOpen = bar.classList.contains("open");
+  const mobile = window.innerWidth <= 640;
   closeAllDropdowns();
+
+  // On mobile, searchBar must live outside filterPills (which is display:none)
+  if (mobile && bar.parentElement.id === "filterPills") {
+    document.querySelector(".topbar").appendChild(bar);
+  }
+
   if (isOpen) {
     bar.classList.remove("open");
-    btn.classList.remove("has-active");
+    btn && btn.classList.remove("has-active");
     searchText = "";
     document.getElementById("searchInput").value = "";
     applyFilters();
   } else {
     bar.classList.add("open");
-    btn.classList.add("has-active");
+    btn && btn.classList.add("has-active");
     setTimeout(() => document.getElementById("searchInput").focus(), 50);
   }
 }
@@ -1996,7 +2003,7 @@ function toggleShabbat() {
   // show/hide topbar pill
   const btnShabbat = document.getElementById("btnShabbat");
   const moreBtn    = document.getElementById("moreShabbatBtn");
-  btnShabbat.style.display = shabbatFilter ? "flex" : "none";
+  btnShabbat.style.display = "none";
   btnShabbat.classList.toggle("has-active", shabbatFilter);
   if (moreBtn) {
     moreBtn.style.borderColor  = shabbatFilter ? "var(--accent)" : "var(--border)";
